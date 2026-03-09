@@ -1,0 +1,42 @@
+# ============================================================
+# voz-controle-pt — dependências
+# Python 3.10+
+# ============================================================
+
+# --- Áudio e STT -----------------------------------------------
+faster-whisper>=1.0.0          # STT offline (Whisper otimizado)
+sounddevice>=0.4.6             # captura de microfone
+numpy>=1.24.0
+vosk>=0.3.45                   # STT alternativo leve (offline)
+# webrtcvad>=2.0.10            # (opcional) requer Visual C++ Build Tools
+                                # faster-whisper já inclui VAD integrado
+
+# --- APIs de IA ------------------------------------------------
+anthropic>=0.34.0              # Claude (primário)
+openai>=1.40.0                 # OpenAI (fallback)
+
+# --- Controle do Windows ---------------------------------------
+pyautogui>=0.9.54              # mouse / teclado / screenshots
+pywinauto>=0.6.8               # controle de janelas e apps
+pynput>=1.7.6                  # captura de eventos teclado/mouse
+pywin32>=306                   # API Win32 (COM para Office)
+comtypes>=1.4.1                # suporte COM adicional
+
+# --- TTS (resposta por voz) ------------------------------------
+pyttsx3>=2.90
+
+# --- Servidor remoto (controle pelo celular) -------------------
+fastapi>=0.111.0
+uvicorn[standard]>=0.30.0
+websockets>=12.0
+qrcode[pil]>=7.4.2
+Pillow>=10.0.0
+python-multipart>=0.0.9
+
+# --- Configuração e utilidades ---------------------------------
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+colorama>=0.4.6
+rich>=13.7.0
+click>=8.1.7
+psutil>=5.9.8                  # informações do sistema

@@ -1,0 +1,96 @@
+# ============================================================
+# VoxControl — configurações gerais
+# ============================================================
+
+app:
+  name: "VoxControl"
+  version: "1.0.0"
+  language: "pt-BR"          # pt-BR ou pt-PT
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  chunk_duration_ms: 30      # para VAD
+  # Dispositivo de microfone: null = padrão do sistema
+  input_device: null
+  # Silêncio para finalizar captura (segundos)
+  silence_timeout: 1.5
+  # Volume mínimo para detectar fala (0.0 - 1.0)
+  min_speech_energy: 0.01
+
+stt:
+  # "faster-whisper" | "vosk"
+  engine: "faster-whisper"
+  whisper:
+    model_size: "small"      # tiny | base | small | medium | large-v3
+    language: "pt"
+    device: "auto"           # auto | cpu | cuda
+    compute_type: "int8"     # int8 | float16 | float32
+    beam_size: 5
+    vad_filter: true
+  vosk:
+    model_path: "models/vosk-model-pt"
+
+wake_word:
+  enabled: true
+  word: "computador"         # palavra de ativação
+  # Alternativas aceitas (para variações de sotaque)
+  aliases:
+    - "computadô"
+    - "ei computador"
+    - "oi computador"
+  # Sensibilidade de detecção (0.0 - 1.0)
+  sensitivity: 0.7
+  listen_timeout: 6          # segundos após wake word
+
+ai:
+  # "claude" | "openai" | "offline"
+  backend: "claude"
+  fallback: "openai"         # usado se o primário falhar
+  claude:
+    model: "claude-haiku-4-5-20251001"
+    max_tokens: 512
+    temperature: 0.1
+  openai:
+    model: "gpt-4o-mini"
+    max_tokens: 512
+    temperature: 0.1
+  # Confiança mínima para executar ação sem confirmar
+  min_confidence: 0.6
+  # Confirmar ações de alto risco por voz
+  confirm_risky_actions: true
+
+voice_response:
+  enabled: true
+  # Velocidade da fala (palavras por minuto)
+  rate: 180
+  # Volume (0.0 - 1.0)
+  volume: 0.9
+  # Preferir voz feminina em PT
+  prefer_female: true
+
+browser:
+  default: "chrome"          # chrome | edge | firefox
+  chrome_path: null          # null = detectar automaticamente
+  edge_path: null
+  firefox_path: null
+
+office:
+  # true = usar API COM (mais confiável), false = usar atalhos de teclado
+  use_com_api: true
+  confirm_before_delete: true
+
+remote:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8765
+  # Gerar QR code no início
+  show_qr: true
+  # Autenticação básica (deixe vazio para desabilitar)
+  auth_token: ""
+
+logging:
+  level: "INFO"              # DEBUG | INFO | WARNING | ERROR
+  file: "logs/voxcontrol.log"
+  max_bytes: 5242880         # 5 MB
+  backup_count: 3

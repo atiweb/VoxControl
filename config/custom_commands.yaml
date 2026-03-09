@@ -1,0 +1,96 @@
+# ============================================================
+# voz-controle-pt — comandos personalizados
+# Adicione seus próprios atalhos de voz aqui
+# ============================================================
+# Formato:
+#   - trigger: "frase que você fala"
+#     action: tipo de ação
+#     params: parâmetros da ação
+
+custom_commands:
+
+  # --- Atalhos para sites favoritos ---
+  - trigger: "abrir gmail"
+    action: "browser.open_url"
+    params:
+      url: "https://mail.google.com"
+
+  - trigger: "abrir youtube"
+    action: "browser.open_url"
+    params:
+      url: "https://www.youtube.com"
+
+  - trigger: "abrir netflix"
+    action: "browser.open_url"
+    params:
+      url: "https://www.netflix.com"
+
+  - trigger: "abrir linkedin"
+    action: "browser.open_url"
+    params:
+      url: "https://www.linkedin.com"
+
+  - trigger: "abrir github"
+    action: "browser.open_url"
+    params:
+      url: "https://www.github.com"
+
+  # --- Atalhos para pastas ---
+  - trigger: "abrir meus documentos"
+    action: "files.open_folder"
+    params:
+      path: "%USERPROFILE%\\Documents"
+
+  - trigger: "abrir área de trabalho"
+    action: "files.open_folder"
+    params:
+      path: "%USERPROFILE%\\Desktop"
+
+  - trigger: "abrir downloads"
+    action: "files.open_folder"
+    params:
+      path: "%USERPROFILE%\\Downloads"
+
+  # --- Comandos de produtividade ---
+  - trigger: "modo foco"
+    action: "system.do_not_disturb"
+    params:
+      enabled: true
+
+  - trigger: "tirar foto da tela"
+    action: "system.screenshot"
+    params:
+      save_to_desktop: true
+
+  # --- Aplicativos frequentes ---
+  - trigger: "abrir bloco de notas"
+    action: "system.open_app"
+    params:
+      app: "notepad"
+
+  - trigger: "abrir terminal"
+    action: "system.open_app"
+    params:
+      app: "cmd"
+
+  - trigger: "abrir powershell"
+    action: "system.open_app"
+    params:
+      app: "powershell"
+
+  - trigger: "abrir configurações"
+    action: "system.open_app"
+    params:
+      app: "ms-settings:"
+
+  - trigger: "abrir gerenciador de tarefas"
+    action: "keyboard.hotkey"
+    params:
+      keys: ["ctrl", "shift", "esc"]
+
+  # --- WhatsApp frequentes ---
+  # Adicione seus contatos frequentes aqui
+  # - trigger: "mensagem para o João"
+  #   action: "whatsapp.open_chat"
+  #   params:
+  #     contact: "João"
