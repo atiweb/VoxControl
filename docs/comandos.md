@@ -3,6 +3,11 @@
 Complete catalog of all 80+ actions supported by VoxControl.
 Each action can be activated by voice in Portuguese, Spanish, or English (via AI) or via offline keyword matching.
 
+Commands can be issued via:
+- **Voice** (microphone or push-to-talk)
+- **Text input** (CLI `--text` mode, desktop GUI command panel, or mobile app)
+- **Remote** (mobile web interface, Flutter app, or REST API)
+
 ---
 
 ## How It Works

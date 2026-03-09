@@ -7,6 +7,7 @@ import time
 from typing import Optional
 
 from ..i18n import t
+from ..paths import resolve_config_path
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class VoiceEngine:
         self._dispatcher = ActionDispatcher({
             **self.config.get("browser", {}),
             **self.config,
-            "custom_commands_path": "config/custom_commands.yaml",
+            "custom_commands_path": str(resolve_config_path("config/custom_commands.yaml")),
         })
         self._speaker = Speaker(self.config.get("voice_response", {}))
 

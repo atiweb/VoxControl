@@ -13,6 +13,7 @@ from .file_control import FileControl
 from .media_control import MediaControl
 from .keyboard_control import KeyboardControl
 from ..i18n import t
+from ..validation import validate_action
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,11 @@ class ActionDispatcher:
         response_text = intent.get("response_text", "")
 
         if action == "unknown":
+            return t("command_not_understood")
+
+        # Validate action against whitelist
+        if not validate_action(action):
+            logger.warning(f"Blocked invalid action: '{action}'")
             return t("command_not_understood")
 
         # Verificar comandos personalizados primeiro

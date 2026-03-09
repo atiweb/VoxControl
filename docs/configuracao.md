@@ -8,6 +8,19 @@ The system uses two configuration sources:
 
 Values from `.env` take priority over `settings.yaml`.
 
+### Configuration File Locations
+
+| Mode | Config Path |
+|------|------------|
+| From source (Python) | `<project>/config/settings.yaml` |
+| Installed (.exe) | `%APPDATA%\VoxControl\config\settings.yaml` |
+
+When running the installed .exe for the first time, default config files are automatically copied to `%APPDATA%\VoxControl\config\`. You can edit them freely -- they are never overwritten by updates.
+
+### GUI Settings Panel
+
+If using the desktop GUI, most settings can be changed visually via the **Settings** tab (language, Whisper model, AI backend, voice, wake word, remote server). Changes are saved to `settings.yaml` automatically.
+
 ---
 
 ## Environment Variables (.env)
@@ -298,3 +311,35 @@ Priority order (highest to lowest):
 2. Environment variables (`.env`)
 3. `config/settings.yaml`
 4. Default values in code
+
+---
+
+## Authentication (Remote API)
+
+The remote server uses JWT authentication. When auth is enabled, users must log in to access the API.
+
+### Section `auth` in settings.yaml
+
+```yaml
+auth:
+  enabled: true                     # true = require login | false = open access
+  credentials_file: "credentials.json"  # stored in config dir
+  token_expiry_hours: 24            # JWT token lifetime
+  max_attempts: 5                   # failed login attempts before lockout
+  lockout_minutes: 15               # lockout duration after max_attempts
+```
+
+### Managing Users
+
+```bash
+# Create/update a user (from project root)
+python -c "from src.auth.auth import AuthManager; AuthManager().create_user('admin', 'your_password')"
+```
+
+Credentials are stored with iterated SHA-256 hashing (100k rounds) in `credentials.json` inside the config directory.
+
+### API Authentication Flow
+
+1. `POST /auth/login` with `{"username": "admin", "password": "..."}` returns a JWT token
+2. Include the token in subsequent requests: `Authorization: Bearer <token>`
+3. WebSocket connections also require the token as a query parameter: `ws://IP:8765/ws?token=<token>`

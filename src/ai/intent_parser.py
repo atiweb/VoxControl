@@ -14,6 +14,7 @@ from ..i18n import (
     get_language, OFFLINE_RULES, SEARCH_PREFIXES, TYPE_PREFIXES,
     CONFIRM_WORDS, CANCEL_WORDS,
 )
+from ..validation import validate_action, sanitize_text_input
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +66,9 @@ class IntentParser:
         Tries the primary backend; if it fails, uses the fallback.
         """
         self._lang = get_language()
+        text = sanitize_text_input(text)
+        if not text:
+            return get_unknown_response(self._lang)
         logger.info(f"Interpreting ({self._lang}): '{text}'")
 
         result = None
@@ -129,6 +133,18 @@ class IntentParser:
             if not required.issubset(data.keys()):
                 logger.warning(f"Incomplete JSON response: {data}")
                 return None
+
+            # Validate action against whitelist
+            action = data.get("action", "")
+            if action and action != "unknown" and not validate_action(action):
+                logger.warning(f"AI returned invalid action: '{action}' — blocked")
+                return None
+
+            # Validate confidence is a number in range
+            confidence = data.get("confidence", 0)
+            if not isinstance(confidence, (int, float)) or not (0.0 <= confidence <= 1.0):
+                data["confidence"] = 0.5
+
             return data
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error: {e}\nResponse: {raw}")

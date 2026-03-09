@@ -14,5 +14,7 @@ models/vosk-*/
 models/*.bin
 logs/*.log
 *.log
+config/credentials.json
+config/.secret
 .DS_Store
 Thumbs.db

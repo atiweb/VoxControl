@@ -35,7 +35,8 @@ console = Console()
 
 def load_config() -> dict:
     """Carrega configuracoes de config/settings.yaml com overrides do .env."""
-    config_path = Path("config/settings.yaml")
+    from src.paths import resolve_config_path
+    config_path = resolve_config_path("config/settings.yaml")
     config = {}
 
     if config_path.exists():
@@ -90,10 +91,11 @@ def load_config() -> dict:
 
 
 def setup_logging(config: dict):
+    from src.paths import get_logs_dir
     level_str = config.get("logging", {}).get("level", "INFO")
     level = getattr(logging, level_str.upper(), logging.INFO)
-    log_file = config.get("logging", {}).get("file", "logs/voxcontrol.log")
-    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+    log_name = config.get("logging", {}).get("file", "logs/voxcontrol.log")
+    log_file = str(get_logs_dir() / Path(log_name).name)
 
     logging.basicConfig(
         level=level,

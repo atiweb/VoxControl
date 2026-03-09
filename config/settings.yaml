@@ -93,8 +93,19 @@ remote:
   port: 8765
   # Show QR code on startup
   show_qr: true
-  # Basic auth (leave empty to disable)
-  auth_token: ""
+  # Authentication (JWT-based)
+  auth:
+    enabled: true
+    credentials_file: "config/credentials.json"
+    token_expiry: 86400     # 24 hours
+    # jwt_secret: ""        # auto-generated if empty
+  # Rate limiting
+  rate_limit:
+    max_requests: 60        # per IP
+    window_seconds: 60
+  # SSL (required for mobile mic)
+  ssl_certfile: ""
+  ssl_keyfile: ""
 
 logging:
   level: "INFO"              # DEBUG | INFO | WARNING | ERROR

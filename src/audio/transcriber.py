@@ -55,7 +55,9 @@ class Transcriber:
         try:
             from vosk import Model, KaldiRecognizer
             cfg = self.config.get("vosk", {})
-            model_path = cfg.get("model_path", "models/vosk-model-pt")
+            default_model = cfg.get("model_path", "models/vosk-model-pt")
+            from ..paths import get_models_dir
+            model_path = str(get_models_dir() / Path(default_model).name)
             if not Path(model_path).exists():
                 raise FileNotFoundError(
                     f"Modelo Vosk não encontrado em '{model_path}'.\n"

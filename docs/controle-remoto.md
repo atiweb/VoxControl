@@ -8,10 +8,18 @@ Use your smartphone as a wireless PC remote control over local Wi-Fi.
 
 VoxControl starts a web server on the PC. Your phone accesses this server through the browser and sends voice or text commands. Communication is real-time via WebSocket.
 
+There are **three ways** to control VoxControl remotely:
+
+| Client | Type | Best For |
+|--------|------|----------|
+| **Mobile browser** | Web app (HTML) | Quick access, no install |
+| **Flutter app** | Native app (iOS/Android) | Full experience |
+| **Custom client** | REST API + WebSocket | Integration / automation |
+
 ```
-Phone (browser)    <----Wi-Fi---->    PC (FastAPI server)
+Phone (browser/app)  <----Wi-Fi---->    PC (FastAPI server)
      |                                       |
-     | WebSocket / HTTP                      | VoiceEngine
+     | REST API + WebSocket (JWT auth)       | VoiceEngine
      |                                       |
    Voice or Text  -------->  Transcription + AI + Action
                    <--------  Text response
@@ -273,13 +281,89 @@ remote:
 
 ### Basic authentication
 
-Set a token in `settings.yaml`:
+The remote server supports **JWT authentication** for secure access.
+
+#### Enable authentication
+
+In `settings.yaml`:
 ```yaml
-remote:
-  auth_token: "my_secret_token_123"
+auth:
+  enabled: true
+  token_expiry_hours: 24
+  max_attempts: 5
+  lockout_minutes: 15
 ```
 
-Clients will need to send this token in their requests.
+#### Create a user
+
+```bash
+python -c "from src.auth.auth import AuthManager; AuthManager().create_user('admin', 'your_password')"
+```
+
+#### Login flow
+
+```bash
+# 1. Login to get JWT token
+curl -X POST http://IP:8765/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "your_password"}'
+# Response: {"access_token": "eyJ...", "token_type": "bearer"}
+
+# 2. Use token in subsequent requests
+curl http://IP:8765/status -H "Authorization: Bearer eyJ..."
+
+# 3. WebSocket with token
+ws://IP:8765/ws?token=eyJ...
+```
+
+The mobile web interface and Flutter app handle login automatically with a login screen.
+
+---
+
+## Flutter Mobile App
+
+A native mobile app is available for iOS and Android, built with Flutter.
+
+### Features
+
+- Native UI with dark theme
+- Dual transport: REST API + WebSocket
+- JWT login screen
+- Voice input (native speech recognition)
+- Text input
+- Real-time command/response history
+- Connection status indicator
+- Server URL configuration
+
+### Build from source
+
+```bash
+cd mobile/voxcontrol_mobile
+flutter pub get
+flutter run          # debug on connected device
+flutter build apk    # Android release
+flutter build ios    # iOS release
+```
+
+### Architecture
+
+The Flutter app uses Provider for state management:
+
+```
+lib/
+├── main.dart                 # App entry + MaterialApp
+├── models/
+│   └── command.dart          # Command data model
+├── services/
+│   ├── api_service.dart      # REST API + JWT auth
+│   └── websocket_service.dart  # WebSocket real-time connection
+├── providers/
+│   └── app_provider.dart     # Central state management
+└── screens/
+    ├── home_screen.dart      # Main control screen
+    ├── login_screen.dart     # JWT authentication
+    └── settings_screen.dart  # Server URL configuration
+```
 
 ---
 

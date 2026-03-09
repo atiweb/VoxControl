@@ -16,6 +16,10 @@ The system follows a pipeline architecture:
 
 Each stage is an independent module that can be replaced or extended.
 
+The application can run in **two modes**:
+- **CLI**: headless, controlled from terminal (`python -m src.main`)
+- **Desktop GUI**: customtkinter window with status, controls, logs, and settings (`VoxControl.pyw`)
+
 ---
 
 ## Module Diagram
@@ -25,6 +29,8 @@ src/
 |
 |-- main.py                    # CLI, argparse, initialization
 |-- i18n.py                    # Internationalization (PT/ES/EN)
+|-- paths.py                   # Centralized path resolver (source vs .exe)
+|-- validation.py              # Action whitelist + input sanitization
 |
 |-- core/
 |   |-- engine.py              # VoiceEngine: orchestrates the full pipeline
@@ -39,7 +45,7 @@ src/
 |   |-- prompts.py             # Multi-language system prompts with 80+ actions
 |
 |-- actions/
-|   |-- dispatcher.py          # ActionDispatcher: routing
+|   |-- dispatcher.py          # ActionDispatcher: routing + validation
 |   |-- system_control.py      # SystemControl: Windows OS
 |   |-- browser_control.py     # BrowserControl: Chrome/Edge/Firefox
 |   |-- whatsapp_control.py    # WhatsAppControl: WhatsApp Web
@@ -51,9 +57,31 @@ src/
 |-- voice/
 |   |-- speaker.py             # Speaker: TTS pyttsx3
 |
+|-- auth/
+|   |-- auth.py                # AuthManager: JWT + password hashing + rate limiting
+|   |-- middleware.py           # FastAPI auth middleware
+|
 |-- remote/
-    |-- server.py              # FastAPI + WebSocket
-    |-- static/index.html      # Mobile interface
+|   |-- server.py              # FastAPI REST API + JWT auth + WebSocket
+|   |-- static/index.html      # Mobile web interface
+|
+|-- gui/
+|   |-- __main__.py            # GUI entry point
+|   |-- app.py                 # VoxControlApp: main window (customtkinter)
+|   |-- tray.py                # System tray icon (pystray)
+|   |-- frames/
+|       |-- status_frame.py    # Engine status indicators
+|       |-- control_frame.py   # Start/stop/mode controls
+|       |-- command_frame.py   # Command history + text input
+|       |-- log_frame.py       # Real-time log viewer
+|       |-- settings_frame.py  # Visual settings editor
+
+build.py                       # Build script (PyInstaller + Inno Setup)
+VoxControl.spec                # PyInstaller spec file
+VoxControl.pyw                 # GUI launcher (double-click)
+installer/
+|-- setup.iss                  # Inno Setup installer script
+|-- version_info.txt           # Windows version metadata
 ```
 
 ---
@@ -383,11 +411,20 @@ Format:
 | Windows | pywinauto | Window control |
 | Office | win32com (pywin32) | Office COM API |
 | TTS | pyttsx3 (SAPI5) | Voice synthesis (PT/ES/EN) |
-| Server | FastAPI + uvicorn | REST API + WebSocket |
-| Frontend | HTML/CSS/JS vanilla | Responsive mobile interface |
+| Server | FastAPI + uvicorn | REST API + JWT auth + WebSocket |
+| Auth | PyJWT + hashlib | JWT tokens + password hashing |
+| Desktop GUI | customtkinter | Native Windows GUI (dark theme) |
+| System tray | pystray + Pillow | Tray icon with context menu |
+| Mobile app | Flutter + Dart | Native iOS/Android client |
+| Frontend | HTML/CSS/JS vanilla | Responsive mobile web interface |
 | Config | PyYAML + python-dotenv | YAML + .env files |
 | CLI | argparse + Rich | Formatted terminal interface |
 | i18n | src/i18n.py | Centralized translations (3 languages) |
+| Paths | src/paths.py | Source vs .exe path resolution |
+| Validation | src/validation.py | Action whitelist + input sanitization |
+| Packaging | PyInstaller | Standalone .exe build |
+| Installer | Inno Setup | Windows installer creation |
+| Testing | pytest (180 tests) | Unit + integration test suite |
 
 ---
 
@@ -398,35 +435,70 @@ Format:
 - **Local network**: remote server accepts connections only on local Wi-Fi
 - **Offline-first**: works completely without internet (after model download)
 - **Action confirmation**: dangerous actions (shutdown, delete) require voice confirmation
+- **JWT authentication**: remote API protected with HMAC-SHA256 signed tokens (configurable expiry)
+- **Password hashing**: iterated SHA-256 with random salt (100,000 rounds)
+- **Rate limiting**: brute-force protection with configurable lockout (max attempts + lockout period)
+- **Action validation**: whitelist-based action validation prevents execution of unknown actions
+- **Input sanitization**: command parameters are sanitized before execution (path traversal, injection prevention)
 
 ---
 
 ## Roadmap
 
-### v1.1 (Current)
+### v1.0
 - [x] Multi-language support (Portuguese, Spanish, English)
 - [x] Dynamic mobile UI language adaptation
 - [x] Language-aware offline rules (~35 rules per language)
+
+### v1.1 (Current)
+- [x] JWT authentication + rate limiting
+- [x] Action validation + input sanitization
+- [x] Desktop GUI (customtkinter, dark theme)
+- [x] System tray icon with context menu
+- [x] Standalone .exe packaging (PyInstaller)
+- [x] Windows installer (Inno Setup)
+- [x] Centralized path resolver (source vs .exe)
+- [x] Full test suite (180 tests, pytest)
+- [x] Flutter mobile app (iOS/Android)
 - [ ] Telegram Bot integration (alternative to WebSocket)
-- [ ] System tray icon with menu
 - [ ] Persistent command history
 
-### v1.2
+### v2.0
 - [ ] Plugin system for community extensions
 - [ ] Macro support (command sequences)
 - [ ] Configuration profiles (work, home, gaming)
-
-### v2.0
-- [ ] Full GUI (Electron or Tauri)
 - [ ] Additional languages (FR, DE, IT)
-- [ ] Packaging as .exe via PyInstaller
 - [ ] Phone audio streaming (without Web Speech API)
 
 ---
 
 ## Testing
 
-### Quick test
+### Automated test suite
+
+VoxControl has a comprehensive test suite with **180 tests** covering all modules:
+
+```bash
+# Run all tests
+python -m pytest tests/ --tb=short
+
+# Run with verbose output
+python -m pytest tests/ -v
+
+# Run a specific test file
+python -m pytest tests/test_dispatcher.py
+```
+
+Test files:
+- `tests/test_dispatcher.py` -- ActionDispatcher routing + custom commands
+- `tests/test_intent_parser.py` -- AI intent parsing (Claude, OpenAI, offline)
+- `tests/test_engine.py` -- VoiceEngine pipeline orchestration
+- `tests/test_i18n.py` -- Internationalization + language switching
+- `tests/test_server.py` -- REST API endpoints + WebSocket + JWT auth
+- `tests/test_auth.py` -- Authentication, password hashing, rate limiting
+- `tests/test_validation.py` -- Action whitelist + input sanitization
+
+### Quick manual test
 
 ```bash
 # Text mode (no microphone, no voice)
@@ -441,22 +513,6 @@ python -m src.main --text --no-voice --no-remote --lang en
 >>> copy
 -> Copied.
 >>> exit
-
-# Portuguese
-python -m src.main --text --no-voice --no-remote --lang pt
->>> abrir calculadora
--> Calc aberto.
->>> pesquisar clima
--> Pesquisando 'clima' no Google.
->>> sair
-
-# Spanish
-python -m src.main --text --no-voice --no-remote --lang es
->>> abrir calculadora
--> Calculadora abierta.
->>> buscar clima
--> Buscando 'clima' en Google.
->>> salir
 ```
 
 ### Verify modules
@@ -479,13 +535,13 @@ curl http://IP:8765/status
 1. Fork the repository
 2. Create a branch: `git checkout -b my-feature`
 3. Make changes
-4. Test with `python -m src.main --text`
-5. Submit a PR
+4. Run tests: `python -m pytest tests/ --tb=short` (all 180 must pass)
+5. Test manually: `python -m src.main --text`
+6. Submit a PR
 
 ### Priority Areas
 
 - More action handlers (Outlook, Teams, VS Code, Telegram)
-- Automated tests (pytest)
 - Improvements to offline parser (more rules)
 - Additional language support (FR, DE, IT)
-- Packaging as executable
+- Plugin system for community extensions

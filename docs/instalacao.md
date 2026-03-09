@@ -2,11 +2,75 @@
 
 Complete guide to install and configure VoxControl on Windows.
 
+VoxControl offers **two installation methods**:
+
+| Method | Best For | Python Required? |
+|--------|----------|-----------------|
+| **Windows Installer (.exe)** | End users | No |
+| **From source (Python)** | Developers / Contributors | Yes |
+
 ---
 
-## System Requirements
+## Option A: Windows Installer (Recommended for Users)
 
-### Required
+The easiest way to get started. No Python installation required.
+
+### System Requirements
+
+| Requirement | Details |
+|-------------|---------|
+| **Operating System** | Windows 10 or 11 (64-bit) |
+| **RAM** | Minimum 4GB (8GB recommended for `small` model) |
+| **Microphone** | Any USB or built-in microphone |
+| **Disk space** | ~50MB (app) + ~500MB (Whisper `small` model, downloaded on first use) |
+
+### 1. Download and install
+
+1. Download `VoxControl-Setup.exe` from the [Releases](https://github.com/atiweb/VoxControl/releases) page
+2. Run the installer -- no admin privileges required
+3. Choose installation options (desktop shortcut, start with Windows)
+4. Click **Install**
+
+The app installs to `%LOCALAPPDATA%\Programs\VoxControl`.
+
+### 2. Configure
+
+On first launch, default configuration files are copied to your user data folder:
+
+```
+%APPDATA%\VoxControl\
+├── config\
+│   ├── settings.yaml      # General settings
+│   └── custom_commands.yaml
+├── logs\                   # Log files
+└── models\                 # Whisper/Vosk models
+```
+
+Create a `.env` file in `%APPDATA%\VoxControl\` to set API keys:
+
+```env
+APP_LANGUAGE=pt-BR
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
+```
+
+### 3. Launch
+
+- **Desktop shortcut**: double-click the VoxControl icon
+- **Start Menu**: search for "VoxControl"
+- The **desktop GUI** opens automatically with status, controls, command history, and settings
+
+### 4. Uninstall
+
+Use **Windows Settings > Apps > Installed Apps > VoxControl > Uninstall**, or run the uninstaller from the Start Menu.
+
+User data in `%APPDATA%\VoxControl` is preserved. Delete it manually if desired.
+
+---
+
+## Option B: From Source (Developers)
+
+### System Requirements
 
 | Requirement | Details |
 |-------------|---------|
@@ -25,10 +89,6 @@ Complete guide to install and configure VoxControl on Windows.
 | Claude API key | Advanced natural language comprehension |
 | OpenAI API key | Alternative to Claude |
 | OpenSSL | Generate HTTPS certificate for phone microphone |
-
----
-
-## Step-by-step Installation
 
 ### 1. Install Python
 
@@ -114,7 +174,20 @@ Checking installation...
 All ready! Run: python -m src.main
 ```
 
-### 7. First use
+### 7. Launch
+
+VoxControl can be launched in **two modes**:
+
+#### Desktop GUI (recommended)
+
+```bash
+# Double-click VoxControl.pyw  (or)
+python run_gui.py
+```
+
+The GUI provides: real-time status, start/stop controls, command history, log viewer, and settings panel.
+
+#### Command Line (CLI)
 
 ```bash
 # Text mode (recommended for first test)
@@ -305,6 +378,12 @@ For Spanish/English voices, you may need to install them via Windows Settings > 
 
 ## Update
 
+### Installer version
+
+Download the latest installer from [Releases](https://github.com/atiweb/VoxControl/releases) and run it. Your settings in `%APPDATA%\VoxControl` are preserved.
+
+### From source
+
 ```bash
 cd VoxControl
 git pull
@@ -314,6 +393,13 @@ pip install -r requirements.txt --upgrade
 ---
 
 ## Uninstall
+
+### Installer version
+
+1. **Windows Settings > Apps > Installed Apps > VoxControl > Uninstall**
+2. Optionally delete user data: `%APPDATA%\VoxControl`
+
+### From source
 
 ```bash
 # Remove the virtual environment
@@ -325,3 +411,36 @@ rmdir /s /q VoxControl
 ```
 
 Whisper models are stored in `%USERPROFILE%\.cache\huggingface\` and can be manually removed if desired.
+
+---
+
+## Building the .exe (for developers)
+
+If you want to build the standalone executable yourself:
+
+```bash
+# Install build dependencies
+pip install pyinstaller
+
+# Build the .exe
+python build.py --clean
+
+# Output: dist/VoxControl/VoxControl.exe
+```
+
+To also generate the Inno Setup installer (requires [Inno Setup 6](https://jrsoftware.org/isdl.php)):
+
+```bash
+python build.py --clean --installer
+```
+
+### Path Architecture
+
+When running as .exe, user data is stored in `%APPDATA%\VoxControl` to allow easy editing without admin privileges:
+
+| Data | Source (Python) | Installed (.exe) |
+|------|----------------|-----------------|
+| Config | `config/` | `%APPDATA%\VoxControl\config\` |
+| Logs | `logs/` | `%APPDATA%\VoxControl\logs\` |
+| Models | `models/` | `%APPDATA%\VoxControl\models\` |
+| Static | `src/remote/static/` | Bundled in `_internal/` |

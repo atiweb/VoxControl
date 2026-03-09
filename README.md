@@ -94,6 +94,29 @@ python -m src.main
 
 ## Usage Modes
 
+### Desktop GUI (recommended for most users)
+
+No terminal needed — just double-click to start:
+
+```bash
+# Option 1: Double-click VoxControl.pyw (no console window)
+# Option 2: From terminal
+python run_gui.py
+# Option 3: Module
+python -m src.gui
+```
+
+The GUI provides:
+- **One-click Start/Stop** for the voice engine
+- **Mode selector** (Wake Word, Push-to-Talk, Text)
+- **Quick action buttons** (open Chrome, screenshot, volume, lock, etc.)
+- **Command input** field with history
+- **Settings panel** (language, AI backend, Whisper model, TTS, remote)
+- **System tray** — close minimizes to tray, runs in background
+- **Live log** with colour-coded entries
+
+### Terminal modes
+
 | Mode | Command | Description |
 |------|---------|-------------|
 | **Wake Word** | `python -m src.main` | Say "computador" / "computadora" / "computer" to activate |
@@ -113,6 +136,8 @@ python -m src.main
 
 ## Mobile Remote Control
 
+### Web Interface (Quick Start)
+
 On startup, the system displays a **QR Code** in the terminal with the access URL:
 
 ```
@@ -126,7 +151,55 @@ On startup, the system displays a **QR Code** in the terminal with the access UR
 
 The mobile interface adapts its language automatically based on the server's configured language — quick buttons, status messages, and speech recognition all match.
 
+### Flutter App (Professional)
+
+A full-featured Flutter mobile app is available under `mobile/`:
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+Features:
+- **JWT-authenticated** connection to VoxControl server
+- **Dark theme** with GitHub-inspired design
+- Quick action grid (Chrome, WhatsApp, screenshot, volume, etc.)
+- Chat-style command history
+- Press-and-hold **voice recording** on material mic button
+- Auto-reconnect WebSocket with exponential backoff
+- REST API primary transport with WebSocket fallback
+
 > Details at [docs/controle-remoto.md](docs/controle-remoto.md)
+
+---
+
+## Authentication & Security
+
+The REST API supports JWT authentication (enabled by default):
+
+```bash
+# First user registration (only works when no users exist)
+curl -X POST http://localhost:8765/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "yourpassword"}'
+
+# Login to get a token
+curl -X POST http://localhost:8765/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "yourpassword"}'
+
+# Use the token for authenticated requests
+curl http://localhost:8765/api/status \
+  -H "Authorization: Bearer <token>"
+```
+
+Security features:
+- **JWT tokens** (HMAC-SHA256, 24h expiry)
+- **Password hashing** (iterated SHA-256, 100k rounds, per-user salt)
+- **Rate limiting** (60 requests/60 seconds per IP)
+- **Input validation** (action whitelist, path traversal prevention, HTML sanitization)
+- **CORS middleware** for cross-origin requests
 
 ---
 
@@ -231,14 +304,10 @@ VoxControl/
 |   |-- settings.yaml          # general settings
 |   |-- custom_commands.yaml   # custom voice shortcuts
 |-- docs/                      # full documentation
-|   |-- instalacao.md
-|   |-- configuracao.md
-|   |-- comandos.md
-|   |-- controle-remoto.md
-|   |-- arquitetura.md
 |-- src/
 |   |-- main.py                # CLI entry point
 |   |-- i18n.py                # internationalization (pt/es/en)
+|   |-- validation.py          # input validation & action whitelist
 |   |-- core/engine.py         # main orchestrator
 |   |-- audio/
 |   |   |-- listener.py        # mic capture + wake word
@@ -255,15 +324,46 @@ VoxControl/
 |   |   |-- file_control.py    # files and folders
 |   |   |-- media_control.py   # Spotify / YouTube / player
 |   |   |-- keyboard_control.py# keyboard and mouse
+|   |-- auth/
+|   |   |-- auth.py            # JWT auth manager
+|   |   |-- middleware.py       # rate limiter middleware
+|   |-- gui/
+|   |   |-- app.py             # main GUI window
+|   |   |-- tray.py            # system tray integration
+|   |   |-- frames/            # UI panels (status, control, log, settings)
 |   |-- voice/speaker.py       # TTS with auto language voice selection
 |   |-- remote/
-|       |-- server.py          # FastAPI + WebSocket
+|       |-- server.py          # FastAPI REST API + WebSocket
 |       |-- static/index.html  # mobile interface (multi-language)
+|-- tests/                     # 180 unit tests
+|   |-- conftest.py
+|   |-- test_i18n.py
+|   |-- test_validation.py
+|   |-- test_intent_parser.py
+|   |-- test_dispatcher.py
+|   |-- test_auth.py
+|   |-- test_engine.py
+|   |-- test_server.py
+|-- mobile/                    # Flutter app
+|   |-- lib/
+|   |   |-- main.dart
+|   |   |-- theme/app_theme.dart
+|   |   |-- services/          # API & WebSocket clients
+|   |   |-- providers/         # State management
+|   |   |-- screens/           # UI screens
+|   |   |-- widgets/           # Reusable widgets
 |-- models/                    # Vosk models (optional)
 |-- logs/                      # application logs
+|-- build.py                   # build script (PyInstaller)
+|-- VoxControl.spec            # PyInstaller spec file
+|-- VoxControl.pyw             # Windows double-click launcher
+|-- run_gui.py                 # terminal GUI launcher
+|-- installer/
+|   |-- setup.iss              # Inno Setup installer script
+|   |-- version_info.txt       # Windows version metadata
+|-- assets/
+|   |-- icon.ico               # application icon
 |-- requirements.txt
-|-- .env.example
-|-- .gitignore
 ```
 
 ---
@@ -272,11 +372,13 @@ VoxControl/
 
 | Metric | Value |
 |--------|-------|
-| Python files | 24 |
-| Lines of code | ~3,800 |
+| Python files | 30 |
+| Lines of code | ~5,200 |
 | Supported actions | 80+ |
 | Offline rules | ~35 per language |
 | Languages | 3 (pt, es, en) |
+| Unit tests | 180 |
+| Flutter screens | 4 |
 | Dependencies | 40+ packages |
 
 ---
@@ -293,13 +395,24 @@ VoxControl/
 
 ---
 
+## Testing
+
+Run the full test suite:
+
+```bash
+python -m pytest tests/ -v
+```
+
+180 tests covering: i18n, validation, intent parsing, action dispatching, authentication, engine orchestration, and REST API endpoints.
+
+---
+
 ## Contributing
 
 PRs are welcome! Priority areas:
 
 - More command handlers for specific apps (Outlook, Teams, VS Code, Telegram)
 - Telegram bot integration (alternative to web server for mobile)
-- Automated tests (pytest)
 - Packaging as `.exe` via PyInstaller
 - GUI (tray icon)
 - Plugin system for community extensions
