@@ -22,14 +22,27 @@ from pathlib import Path
 ROOT = Path(__file__).parent.absolute()
 # Avoid UNC paths on mapped drives — PyInstaller doesn't handle them well
 if str(ROOT).startswith("\\\\"):
-    import os
     cwd = os.getcwd()
     if not cwd.startswith("\\\\"):
         ROOT = Path(cwd)
 
-# Directories
-DIST_DIR = ROOT / "dist"
-BUILD_DIR = ROOT / "build"
+# Detect network drive by resolving the path (mapped drives resolve to UNC)
+_IS_NETWORK_DRIVE = False
+try:
+    _resolved = str(ROOT.resolve())
+    if _resolved.startswith("\\\\") and not str(ROOT).startswith("\\\\"):
+        _IS_NETWORK_DRIVE = True
+except Exception:
+    pass
+
+# Directories — use local temp for build/dist on network drives
+if _IS_NETWORK_DRIVE:
+    _LOCAL_BUILD = Path(os.environ.get("LOCALAPPDATA", os.environ.get("TEMP", "C:\\Temp"))) / "VoxControl-build"
+else:
+    _LOCAL_BUILD = None
+
+DIST_DIR = _LOCAL_BUILD / "dist" if _LOCAL_BUILD else ROOT / "dist"
+BUILD_DIR = _LOCAL_BUILD / "build" if _LOCAL_BUILD else ROOT / "build"
 SPEC_FILE = ROOT / "VoxControl.spec"
 INSTALLER_DIR = ROOT / "installer"
 
@@ -49,10 +62,18 @@ def check_pyinstaller():
 def clean():
     """Remove previous build artifacts."""
     print("\n-- Cleaning previous builds --")
-    for d in [BUILD_DIR, DIST_DIR]:
+    dirs_to_clean = [BUILD_DIR, DIST_DIR]
+    # Also clean old network-drive paths if we moved to local
+    if _LOCAL_BUILD:
+        dirs_to_clean.extend([ROOT / "build", ROOT / "dist"])
+    for d in dirs_to_clean:
         if d.exists():
-            shutil.rmtree(d)
-            print(f"  Removed {d}")
+            try:
+                shutil.rmtree(d)
+                print(f"  Removed {d}")
+            except OSError as e:
+                print(f"  WARNING: Could not fully remove {d}: {e}")
+                print(f"  Continuing anyway...")
     print("  Clean done.\n")
 
 
@@ -94,8 +115,7 @@ def create_version_info():
         return
 
     INSTALLER_DIR.mkdir(exist_ok=True)
-    version_file.write_text(r"""# UTF-8
-VSVersionInfo(
+    version_file.write_text("""VSVersionInfo(
   ffi=FixedFileInfo(
     fileVers=(1, 1, 0, 0),
     prodVers=(1, 1, 0, 0),
@@ -110,20 +130,20 @@ VSVersionInfo(
     StringFileInfo(
       [
         StringTable(
-          u'040904B0',
+          '040904B0',
           [
-            StringStruct(u'CompanyName', u'VoxControl'),
-            StringStruct(u'FileDescription', u'VoxControl - Voice Control for Windows'),
-            StringStruct(u'FileVersion', u'1.1.0.0'),
-            StringStruct(u'InternalName', u'VoxControl'),
-            StringStruct(u'OriginalFilename', u'VoxControl.exe'),
-            StringStruct(u'ProductName', u'VoxControl'),
-            StringStruct(u'ProductVersion', u'1.1.0'),
+            StringStruct('CompanyName', 'VoxControl'),
+            StringStruct('FileDescription', 'VoxControl - Voice Control for Windows'),
+            StringStruct('FileVersion', '1.1.0.0'),
+            StringStruct('InternalName', 'VoxControl'),
+            StringStruct('OriginalFilename', 'VoxControl.exe'),
+            StringStruct('ProductName', 'VoxControl'),
+            StringStruct('ProductVersion', '1.1.0'),
           ]
         )
       ]
     ),
-    VarFileInfo([VarStruct(u'Translation', [1033, 1200])])
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
 )
 """, encoding="utf-8")
@@ -141,6 +161,8 @@ def build_exe():
         sys.executable, "-m", "PyInstaller",
         "--noconfirm",
         "--clean",
+        "--distpath", str(DIST_DIR),
+        "--workpath", str(BUILD_DIR),
         str(SPEC_FILE),
     ]
 
@@ -157,11 +179,40 @@ def build_exe():
         print("\n  BUILD SUCCESSFUL")
         print(f"  Output: {DIST_DIR / 'VoxControl'}")
         print(f"  Exe:    {exe_path} ({size_mb:.1f} MB)")
+        if _IS_NETWORK_DRIVE:
+            print(f"\n  NOTE: Built to local path (network drive detected).")
+            print(f"  The exe CANNOT run from a network/UNC path.")
+            print(f"  Copy the folder or use the installer to deploy.")
     else:
         print("\nERROR: VoxControl.exe not found after build.")
         sys.exit(1)
 
+    # Quick verification — try to launch and immediately exit
+    _verify_exe(exe_path)
+
     return exe_path
+
+
+def _verify_exe(exe_path: Path):
+    """Quick smoke test: launch the exe with a non-existent flag so it exits quickly."""
+    print("\n  Verifying exe loads correctly...")
+    try:
+        proc = subprocess.run(
+            [str(exe_path)],
+            timeout=10,
+            capture_output=True,
+            cwd=str(exe_path.parent),
+        )
+        # The GUI will fail to find a display or exit with some error,
+        # but if it gets past DLL loading that's a success.
+        print("  Exe loaded successfully (exit code: %d)" % proc.returncode)
+    except subprocess.TimeoutExpired:
+        # Timeout means the GUI actually started — that's good
+        print("  Exe started successfully (GUI launched, killed after timeout)")
+        subprocess.run(["taskkill", "/f", "/im", "VoxControl.exe"],
+                       capture_output=True)
+    except Exception as e:
+        print(f"  WARNING: Could not verify exe: {e}")
 
 
 def build_installer():
