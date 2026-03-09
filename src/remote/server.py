@@ -18,13 +18,16 @@ from pathlib import Path
 if TYPE_CHECKING:
     from ..core.engine import VoiceEngine
 
+from ..i18n import t, get_language, SPEECH_RECOGNITION_LANG, STRINGS
+
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="VoxControl - Remote API", version="1.0.0")
+app = FastAPI(title="VoxControl - Remote API", version="1.1.0")
 
 # Engine injetada em runtime
 _engine: Optional["VoiceEngine"] = None
 _connections: set = set()
+_server_lang: str = "pt"
 
 
 def set_engine(engine: "VoiceEngine"):
@@ -32,8 +35,13 @@ def set_engine(engine: "VoiceEngine"):
     _engine = engine
 
 
+def set_server_lang(lang: str):
+    global _server_lang
+    _server_lang = lang
+
+
 def get_local_ip() -> str:
-    """Obtém o IP local da máquina na rede Wi-Fi."""
+    """Gets the local IP address on the Wi-Fi network."""
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
@@ -45,7 +53,7 @@ def get_local_ip() -> str:
 
 
 def generate_qr(url: str) -> str:
-    """Gera QR code em ASCII para exibir no terminal."""
+    """Generates an ASCII QR code for terminal display."""
     try:
         import qrcode
         qr = qrcode.QRCode(border=1)
@@ -56,18 +64,45 @@ def generate_qr(url: str) -> str:
         qr.print_ascii(out=f)
         return f.getvalue()
     except ImportError:
-        return f"(instale qrcode para exibir QR)\nURL: {url}"
+        return f"(install qrcode to display QR)\nURL: {url}"
+
+
+def _get_client_strings() -> dict:
+    """Returns UI strings for the remote client based on current language."""
+    lang = _server_lang
+    lang_strings = STRINGS.get(lang, STRINGS.get("en", {}))
+    return {
+        "language": SPEECH_RECOGNITION_LANG.get(lang, "en-US"),
+        "connecting": lang_strings.get("ui_connecting", "Connecting..."),
+        "connected": lang_strings.get("ui_connected", "Connected."),
+        "disconnected": lang_strings.get("ui_disconnected", "Disconnected. Reconnecting..."),
+        "connection_error": lang_strings.get("ui_connection_error", "Connection error."),
+        "no_connection": lang_strings.get("ui_no_connection", "No connection."),
+        "mic_error": lang_strings.get("ui_mic_error", "Could not access microphone."),
+        "hold_to_speak": lang_strings.get("ui_hold_to_speak", "Hold button to speak"),
+        "listening": lang_strings.get("ui_listening", "Listening..."),
+        "processing": lang_strings.get("ui_processing", "Processing..."),
+        "placeholder": lang_strings.get("ui_placeholder", "Type a command..."),
+        # Quick command data-cmd values
+        "qc_chrome": lang_strings.get("qc_chrome", "open chrome"),
+        "qc_whatsapp": lang_strings.get("qc_whatsapp", "open whatsapp"),
+        "qc_screenshot": lang_strings.get("qc_screenshot", "take screenshot"),
+        "qc_vol_up": lang_strings.get("qc_vol_up", "volume up"),
+        "qc_vol_down": lang_strings.get("qc_vol_down", "volume down"),
+        "qc_minimize": lang_strings.get("qc_minimize", "minimize"),
+        "qc_lock": lang_strings.get("qc_lock", "lock screen"),
+    }
 
 
 # ------------------------------------------------------------------ ENDPOINTS
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
-    """Serve a interface mobile."""
+    """Serves the mobile interface."""
     static_path = Path(__file__).parent / "static" / "index.html"
     if static_path.exists():
         return HTMLResponse(static_path.read_text(encoding="utf-8"))
-    return HTMLResponse("<h1>Voz Controle PT</h1><p>Interface mobile não encontrada.</p>")
+    return HTMLResponse("<h1>VoxControl</h1><p>Mobile interface not found.</p>")
 
 
 @app.get("/status")
@@ -76,36 +111,28 @@ async def status():
         "status": "online",
         "engine_ready": _engine is not None,
         "connected_clients": len(_connections),
+        "language": _server_lang,
     })
-
-
-@app.post("/command")
-async def command_http(payload: dict):
-    """Endpoint HTTP para enviar comando de texto."""
-    text = payload.get("text", "").strip()
-    if not text:
-        raise HTTPException(status_code=400, detail="Campo 'text' obrigatório.")
-    if _engine is None:
-        raise HTTPException(status_code=503, detail="Engine não iniciada.")
-
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(None, _engine.process_text, text)
-    return JSONResponse({"command": text, "response": result})
 
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """
-    WebSocket para comunicação bidirecional em tempo real.
-    Protocolo:
-      Cliente -> Servidor: {"type": "text", "data": "abrir chrome"}
-      Cliente -> Servidor: {"type": "audio_b64", "data": "<base64 PCM 16kHz>"}
-      Servidor -> Cliente: {"type": "response", "data": "Chrome aberto."}
-      Servidor -> Cliente: {"type": "status", "data": "listening"}
+    WebSocket for real-time bidirectional communication.
+    Protocol:
+      Client -> Server: {"type": "text", "data": "open chrome"}
+      Client -> Server: {"type": "audio_b64", "data": "<base64 PCM 16kHz>"}
+      Server -> Client: {"type": "response", "data": "Chrome opened."}
+      Server -> Client: {"type": "config", "data": {...}}
+      Server -> Client: {"type": "status", "data": "connected"}
     """
     await websocket.accept()
     _connections.add(websocket)
-    logger.info(f"Cliente conectado: {websocket.client}")
+    logger.info(f"Client connected: {websocket.client}")
+
+    # Send config (language strings) first, then status
+    client_strings = _get_client_strings()
+    await websocket.send_text(json.dumps({"type": "config", "data": client_strings}))
     await websocket.send_text(json.dumps({"type": "status", "data": "connected"}))
 
     try:
@@ -122,10 +149,9 @@ async def websocket_endpoint(websocket: WebSocket):
                     loop = asyncio.get_event_loop()
                     response = await loop.run_in_executor(None, _engine.process_text, data)
                 else:
-                    response = "Engine não iniciada."
+                    response = t("engine_not_ready")
 
             elif msg_type == "audio_b64":
-                # Áudio em base64 (PCM float32 16kHz)
                 import base64
                 import numpy as np
                 audio_bytes = base64.b64decode(data)
@@ -133,9 +159,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 if _engine:
                     loop = asyncio.get_event_loop()
                     response = await loop.run_in_executor(None, _engine.process_audio, audio)
-                    response = response or "Não entendi. Pode repetir?"
+                    response = response or t("audio_not_understood")
                 else:
-                    response = "Engine não iniciada."
+                    response = t("engine_not_ready")
 
             elif msg_type == "ping":
                 await websocket.send_text(json.dumps({"type": "pong"}))
@@ -145,15 +171,15 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text(json.dumps({"type": "response", "data": response}))
 
     except WebSocketDisconnect:
-        logger.info(f"Cliente desconectado: {websocket.client}")
+        logger.info(f"Client disconnected: {websocket.client}")
     except Exception as e:
-        logger.error(f"Erro no WebSocket: {e}")
+        logger.error(f"WebSocket error: {e}")
     finally:
         _connections.discard(websocket)
 
 
 async def broadcast(message: str):
-    """Envia mensagem para todos os clientes conectados."""
+    """Sends message to all connected clients."""
     disconnected = set()
     for ws in _connections:
         try:
@@ -163,12 +189,13 @@ async def broadcast(message: str):
     _connections -= disconnected
 
 
-def start_server(config: dict, engine: "VoiceEngine"):
-    """Inicia o servidor em thread separada."""
+def start_server(config: dict, engine: "VoiceEngine", lang: str = "pt"):
+    """Starts the server in a separate thread."""
     import threading
     import uvicorn
 
     set_engine(engine)
+    set_server_lang(lang)
 
     host = config.get("host", "0.0.0.0")
     port = config.get("port", 8765)
@@ -179,13 +206,13 @@ def start_server(config: dict, engine: "VoiceEngine"):
     scheme = "https" if ssl_certfile else "http"
     url = f"{scheme}://{local_ip}:{port}"
 
-    logger.info(f"Servidor remoto iniciando em {url}")
+    logger.info(f"Remote server starting at {url}")
 
     if config.get("show_qr", True):
         qr = generate_qr(url)
         print("\n" + "="*50)
-        print(f"  CONTROLE REMOTO DISPONÍVEL")
-        print(f"  Conecte pelo celular: {url}")
+        print(f"  {t('remote_available')}")
+        print(f"  {t('remote_connect_msg', url=url)}")
         print("="*50)
         print(qr)
         print("="*50 + "\n")

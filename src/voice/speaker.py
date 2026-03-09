@@ -1,9 +1,12 @@
 """
-Módulo de síntese de voz (TTS) para resposta ao usuário em português.
+Modulo de sintese de voz (TTS) para resposta ao usuario.
+Supports: pt (Portuguese), es (Spanish), en (English).
 """
 
 import logging
 import threading
+
+from ..i18n import get_language, VOICE_PATTERNS
 
 logger = logging.getLogger(__name__)
 
@@ -31,35 +34,48 @@ class Speaker:
             self._engine.setProperty("rate", self.rate)
             self._engine.setProperty("volume", self.volume)
             self._select_voice()
-            logger.info("TTS inicializado.")
+            logger.info("TTS initialized.")
         except Exception as e:
-            logger.warning(f"Erro ao inicializar TTS: {e}. Respostas por voz desabilitadas.")
+            logger.warning(f"Error initializing TTS: {e}. Voice responses disabled.")
             self.enabled = False
 
     def _select_voice(self):
-        """Seleciona a melhor voz em português disponível."""
+        """Selects the best voice for the current language."""
         if self._engine is None:
             return
-        voices = self._engine.getProperty("voices")
-        pt_voices = [v for v in voices if "pt" in v.id.lower() or "portugu" in v.name.lower()]
 
-        if not pt_voices:
-            logger.warning("Nenhuma voz em português encontrada. Usando padrão.")
+        lang = get_language()
+        patterns = VOICE_PATTERNS.get(lang, VOICE_PATTERNS.get("en", {}))
+        lang_ids = patterns.get("lang_ids", ["en"])
+        female_names = patterns.get("female_names", ["female"])
+
+        voices = self._engine.getProperty("voices")
+
+        # Find voices matching the language
+        lang_voices = [
+            v for v in voices
+            if any(lid in v.id.lower() or lid in v.name.lower() for lid in lang_ids)
+        ]
+
+        if not lang_voices:
+            lang_name = {"pt": "Portuguese", "es": "Spanish", "en": "English"}.get(lang, lang)
+            logger.warning(f"No {lang_name} voice found. Using default.")
             return
 
         if self.prefer_female:
-            female = [v for v in pt_voices if any(
-                f in v.name.lower() for f in ["female", "woman", "maria", "ana", "lucia", "fernanda"]
-            )]
-            selected = female[0] if female else pt_voices[0]
+            female = [
+                v for v in lang_voices
+                if any(f in v.name.lower() for f in female_names)
+            ]
+            selected = female[0] if female else lang_voices[0]
         else:
-            selected = pt_voices[0]
+            selected = lang_voices[0]
 
         self._engine.setProperty("voice", selected.id)
-        logger.info(f"Voz selecionada: {selected.name}")
+        logger.info(f"Voice selected: {selected.name}")
 
     def say(self, text: str, blocking: bool = False):
-        """Fala o texto. Por padrão, não bloqueia a thread principal."""
+        """Speaks the text. By default, non-blocking."""
         if not self.enabled or not text:
             return
 
@@ -78,12 +94,12 @@ class Speaker:
                 self._engine.say(text)
                 self._engine.runAndWait()
             except Exception as e:
-                logger.error(f"Erro ao falar: {e}")
+                logger.error(f"Error speaking: {e}")
             finally:
                 self._speaking = False
 
     def stop(self):
-        """Para a fala atual."""
+        """Stops current speech."""
         if self._engine and self._speaking:
             try:
                 self._engine.stop()
@@ -94,7 +110,7 @@ class Speaker:
         return self._speaking
 
     def list_voices(self) -> list:
-        """Lista todas as vozes disponíveis."""
+        """Lists all available voices."""
         if self._engine is None:
             return []
         return [(v.id, v.name) for v in self._engine.getProperty("voices")]

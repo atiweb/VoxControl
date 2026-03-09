@@ -1,5 +1,5 @@
 """
-Dispatcher: recebe a intenção interpretada pela IA e executa a ação correta.
+Dispatcher: recebe a intencao interpretada pela IA e executa a acao correta.
 """
 
 import logging
@@ -12,6 +12,7 @@ from .office_control import OfficeControl
 from .file_control import FileControl
 from .media_control import MediaControl
 from .keyboard_control import KeyboardControl
+from ..i18n import t
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +55,7 @@ class ActionDispatcher:
         response_text = intent.get("response_text", "")
 
         if action == "unknown":
-            return "Não entendi o comando. Pode repetir de outra forma?"
+            return t("command_not_understood")
 
         # Verificar comandos personalizados primeiro
         custom_result = self._check_custom_command(action, params)
@@ -64,7 +65,7 @@ class ActionDispatcher:
         # Rotear para o handler correto
         try:
             result = self._route(action, params)
-            return result or response_text or "Pronto."
+            return result or response_text or t("done")
         except Exception as e:
             logger.error(f"Erro ao executar '{action}': {e}", exc_info=True)
             return f"Erro ao executar o comando: {e}"

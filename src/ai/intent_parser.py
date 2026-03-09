@@ -1,6 +1,7 @@
 """
-Interpretador de intenções usando IA (Claude ou OpenAI).
-Converte texto em português para ações estruturadas JSON.
+Interpretador de intencoes usando IA (Claude ou OpenAI).
+Converte texto falado em acoes estruturadas JSON.
+Supports: pt (Portuguese), es (Spanish), en (English).
 """
 
 import json
@@ -8,7 +9,11 @@ import logging
 import re
 from typing import Optional
 
-from .prompts import SYSTEM_PROMPT, UNKNOWN_RESPONSE, CONFIRMATION_PROMPT
+from .prompts import get_system_prompt, get_unknown_response, get_confirmation_prompt
+from ..i18n import (
+    get_language, OFFLINE_RULES, SEARCH_PREFIXES, TYPE_PREFIXES,
+    CONFIRM_WORDS, CANCEL_WORDS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +26,7 @@ class IntentParser:
         self.backend = config.get("backend", "claude")
         self.fallback = config.get("fallback", "openai")
         self.min_confidence = config.get("min_confidence", 0.6)
+        self._lang = get_language()
 
         self._claude_client = None
         self._openai_client = None
@@ -35,11 +41,11 @@ class IntentParser:
                 api_key = os.getenv("ANTHROPIC_API_KEY")
                 if api_key:
                     self._claude_client = anthropic.Anthropic(api_key=api_key)
-                    logger.info("Cliente Claude inicializado.")
+                    logger.info("Claude client initialized.")
                 else:
-                    logger.warning("ANTHROPIC_API_KEY não encontrada.")
+                    logger.warning("ANTHROPIC_API_KEY not found.")
             except ImportError:
-                logger.warning("anthropic não instalado. pip install anthropic")
+                logger.warning("anthropic not installed. pip install anthropic")
 
         if self.backend == "openai" or self.fallback == "openai":
             try:
@@ -47,32 +53,33 @@ class IntentParser:
                 api_key = os.getenv("OPENAI_API_KEY")
                 if api_key:
                     self._openai_client = OpenAI(api_key=api_key)
-                    logger.info("Cliente OpenAI inicializado.")
+                    logger.info("OpenAI client initialized.")
                 else:
-                    logger.warning("OPENAI_API_KEY não encontrada.")
+                    logger.warning("OPENAI_API_KEY not found.")
             except ImportError:
-                logger.warning("openai não instalado. pip install openai")
+                logger.warning("openai not installed. pip install openai")
 
     def parse(self, text: str) -> dict:
         """
-        Interpreta o texto e retorna uma ação estruturada.
-        Tenta o backend primário; se falhar, usa o fallback.
+        Interprets text and returns a structured action.
+        Tries the primary backend; if it fails, uses the fallback.
         """
-        logger.info(f"Interpretando: '{text}'")
+        self._lang = get_language()
+        logger.info(f"Interpreting ({self._lang}): '{text}'")
 
         result = None
         if self.backend != "offline":
             result = self._try_parse(text, self.backend)
 
         if result is None and self.fallback and self.fallback != self.backend:
-            logger.info(f"Tentando fallback: {self.fallback}")
+            logger.info(f"Trying fallback: {self.fallback}")
             result = self._try_parse(text, self.fallback)
 
         if result is None:
-            logger.warning("Todos os backends falharam. Usando correspondência offline.")
+            logger.warning("All backends failed. Using offline keyword matching.")
             result = self._offline_parse(text)
 
-        logger.info(f"Ação interpretada: {result.get('action')} (confiança: {result.get('confidence', 0):.2f})")
+        logger.info(f"Interpreted action: {result.get('action')} (confidence: {result.get('confidence', 0):.2f})")
         return result
 
     def _try_parse(self, text: str, backend: str) -> Optional[dict]:
@@ -82,16 +89,17 @@ class IntentParser:
             elif backend == "openai" and self._openai_client:
                 return self._parse_openai(text)
         except Exception as e:
-            logger.error(f"Erro no backend '{backend}': {e}")
+            logger.error(f"Error in backend '{backend}': {e}")
         return None
 
     def _parse_claude(self, text: str) -> Optional[dict]:
         cfg = self.config.get("claude", {})
+        system_prompt = get_system_prompt(self._lang)
         response = self._claude_client.messages.create(
             model=cfg.get("model", "claude-haiku-4-5-20251001"),
             max_tokens=cfg.get("max_tokens", 512),
             temperature=cfg.get("temperature", 0.1),
-            system=SYSTEM_PROMPT,
+            system=system_prompt,
             messages=[{"role": "user", "content": text}],
         )
         raw = response.content[0].text.strip()
@@ -99,12 +107,13 @@ class IntentParser:
 
     def _parse_openai(self, text: str) -> Optional[dict]:
         cfg = self.config.get("openai", {})
+        system_prompt = get_system_prompt(self._lang)
         response = self._openai_client.chat.completions.create(
             model=cfg.get("model", "gpt-4o-mini"),
             max_tokens=cfg.get("max_tokens", 512),
             temperature=cfg.get("temperature", 0.1),
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": text},
             ],
         )
@@ -112,68 +121,29 @@ class IntentParser:
         return self._parse_json_response(raw)
 
     def _parse_json_response(self, raw: str) -> Optional[dict]:
-        """Extrai e valida JSON da resposta da IA."""
-        # Remove blocos de código markdown se presentes
+        """Extracts and validates JSON from the AI response."""
         raw = re.sub(r"```(?:json)?\n?", "", raw).strip()
         try:
             data = json.loads(raw)
             required = {"action", "params", "confidence", "response_text"}
             if not required.issubset(data.keys()):
-                logger.warning(f"Resposta JSON incompleta: {data}")
+                logger.warning(f"Incomplete JSON response: {data}")
                 return None
             return data
         except json.JSONDecodeError as e:
-            logger.error(f"Erro ao decodificar JSON: {e}\nResposta: {raw}")
+            logger.error(f"JSON decode error: {e}\nResponse: {raw}")
             return None
 
     def _offline_parse(self, text: str) -> dict:
         """
-        Correspondência simples de palavras-chave quando a IA não está disponível.
-        Cobertura básica dos comandos mais comuns.
+        Simple keyword matching when AI is not available.
+        Uses language-specific rules from i18n module.
         """
         text_lower = text.lower().strip()
+        lang = self._lang
 
-        rules = [
-            # Sistema
-            (["abrir calculadora", "abre calculadora"], "system.open_app", {"app": "calc"}, "Abrindo a calculadora."),
-            (["abrir bloco de notas", "abre bloco de notas", "abrir notepad"], "system.open_app", {"app": "notepad"}, "Abrindo o bloco de notas."),
-            (["abrir explorador", "abrir pasta", "abrir arquivos"], "system.open_app", {"app": "explorer"}, "Abrindo o explorador de arquivos."),
-            (["minimizar", "minimiza"], "system.minimize", {}, "Janela minimizada."),
-            (["maximizar", "maximiza"], "system.maximize", {}, "Janela maximizada."),
-            (["área de trabalho", "mostrar área de trabalho"], "system.show_desktop", {}, "Mostrando a área de trabalho."),
-            (["bloquear tela", "bloquear computador"], "system.lock_screen", {}, "Bloqueando a tela."),
-            (["tirar print", "captura de tela", "screenshot"], "system.screenshot", {"region": "full", "save_to_desktop": True}, "Captura de tela realizada."),
-            (["aumentar volume"], "system.volume_up", {"amount": 3}, "Volume aumentado."),
-            (["diminuir volume", "baixar volume"], "system.volume_down", {"amount": 3}, "Volume diminuído."),
-            (["silenciar", "mudo", "mutar"], "system.volume_mute", {}, "Volume silenciado."),
-            # Navegador
-            (["abrir chrome", "abrir google chrome"], "browser.open", {"browser": "chrome"}, "Abrindo o Chrome."),
-            (["abrir edge"], "browser.open", {"browser": "edge"}, "Abrindo o Edge."),
-            (["nova aba", "nova guia"], "browser.new_tab", {}, "Nova aba aberta."),
-            (["fechar aba", "fechar guia"], "browser.close_tab", {}, "Aba fechada."),
-            (["voltar", "página anterior"], "browser.go_back", {}, "Voltando."),
-            (["avançar", "próxima página"], "browser.go_forward", {}, "Avançando."),
-            (["recarregar", "atualizar página", "f5"], "browser.refresh", {}, "Página recarregada."),
-            (["rolar para baixo", "descer"], "browser.scroll_down", {"amount": 3}, "Rolando para baixo."),
-            (["rolar para cima", "subir"], "browser.scroll_up", {"amount": 3}, "Rolando para cima."),
-            # WhatsApp
-            (["abrir whatsapp", "whatsapp"], "whatsapp.open", {}, "Abrindo o WhatsApp."),
-            # Office
-            (["abrir word", "microsoft word"], "system.open_app", {"app": "word"}, "Abrindo o Word."),
-            (["abrir excel", "microsoft excel"], "system.open_app", {"app": "excel"}, "Abrindo o Excel."),
-            (["abrir powerpoint", "power point"], "system.open_app", {"app": "powerpnt"}, "Abrindo o PowerPoint."),
-            (["salvar", "salva"], "keyboard.save", {}, "Salvando."),
-            (["desfazer", "ctrl z"], "keyboard.undo", {}, "Ação desfeita."),
-            (["refazer", "ctrl y"], "keyboard.redo", {}, "Ação refeita."),
-            (["copiar", "copia"], "keyboard.copy", {}, "Copiado."),
-            (["colar", "cola"], "keyboard.paste", {}, "Colado."),
-            (["recortar", "cortar"], "keyboard.cut", {}, "Recortado."),
-            (["selecionar tudo"], "keyboard.select_all", {}, "Tudo selecionado."),
-            # Mídia
-            (["pausar", "parar música", "play pause"], "media.play_pause", {}, "Play/Pause."),
-            (["próxima música", "próxima faixa"], "media.next", {}, "Próxima música."),
-            (["música anterior", "faixa anterior"], "media.previous", {}, "Música anterior."),
-        ]
+        # Get language-specific rules (fallback to English)
+        rules = OFFLINE_RULES.get(lang, OFFLINE_RULES.get("en", []))
 
         for triggers, action, params, response in rules:
             if any(t in text_lower for t in triggers):
@@ -185,38 +155,57 @@ class IntentParser:
                     "requires_confirmation": False,
                 }
 
-        # Pesquisa web genérica
-        for prefix in ["pesquisar", "pesquisa", "buscar", "busca", "procurar", "google"]:
+        # Web search (generic)
+        prefixes = SEARCH_PREFIXES.get(lang, SEARCH_PREFIXES["en"])
+        for prefix in prefixes:
             if text_lower.startswith(prefix):
                 query = text[len(prefix):].strip()
                 if query:
+                    responses = {
+                        "pt": f"Pesquisando por {query}.",
+                        "es": f"Buscando {query}.",
+                        "en": f"Searching for {query}.",
+                    }
                     return {
                         "action": "browser.search",
                         "params": {"query": query, "engine": "google"},
                         "confidence": 0.80,
-                        "response_text": f"Pesquisando por {query}.",
+                        "response_text": responses.get(lang, responses["en"]),
                         "requires_confirmation": False,
                     }
 
-        # Digitar texto
-        for prefix in ["digitar", "digita", "escrever", "escreve", "escreva"]:
+        # Type text
+        type_prefixes = TYPE_PREFIXES.get(lang, TYPE_PREFIXES["en"])
+        for prefix in type_prefixes:
             if text_lower.startswith(prefix):
                 type_text = text[len(prefix):].strip()
                 if type_text:
+                    responses = {
+                        "pt": f"Digitando: {type_text}",
+                        "es": f"Escribiendo: {type_text}",
+                        "en": f"Typing: {type_text}",
+                    }
                     return {
                         "action": "keyboard.type",
                         "params": {"text": type_text},
                         "confidence": 0.85,
-                        "response_text": f"Digitando: {type_text}",
+                        "response_text": responses.get(lang, responses["en"]),
                         "requires_confirmation": False,
                     }
 
-        return {**UNKNOWN_RESPONSE, "response_text": f"Não entendi '{text}'. Pode repetir?"}
+        unknown = get_unknown_response(lang)
+        unknown_texts = {
+            "pt": f"Nao entendi '{text}'. Pode repetir?",
+            "es": f"No entendi '{text}'. Puede repetir?",
+            "en": f"I didn't understand '{text}'. Can you repeat?",
+        }
+        return {**unknown, "response_text": unknown_texts.get(lang, unknown_texts["en"])}
 
     def check_confirmation(self, original_command: str, action_desc: str, user_response: str) -> bool:
-        """Verifica se a resposta do usuário é uma confirmação."""
-        confirm_words = ["sim", "pode", "confirma", "ok", "isso", "certo", "vai", "execute", "confirmo", "é isso"]
-        cancel_words = ["não", "cancela", "para", "desiste", "errado", "outro", "nevermind"]
+        """Checks if the user response is a confirmation."""
+        lang = self._lang
+        confirm_words = CONFIRM_WORDS.get(lang, CONFIRM_WORDS["en"])
+        cancel_words = CANCEL_WORDS.get(lang, CANCEL_WORDS["en"])
 
         response_lower = user_response.lower()
 
@@ -225,9 +214,10 @@ class IntentParser:
         if any(w in response_lower for w in cancel_words):
             return False
 
-        # Usa IA para casos ambíguos
+        # Use AI for ambiguous cases
         if self._claude_client or self._openai_client:
-            prompt = CONFIRMATION_PROMPT.format(
+            prompt_template = get_confirmation_prompt(lang)
+            prompt = prompt_template.format(
                 original_command=original_command,
                 action_description=action_desc,
                 confirmation_text=user_response,

@@ -10,20 +10,17 @@ from pathlib import Path
 
 import pyautogui
 
+from ..i18n import get_language, FOLDER_ALIASES_I18N
+
 logger = logging.getLogger(__name__)
 
-# Aliases de pastas comuns
-FOLDER_ALIASES = {
-    "documentos": "%USERPROFILE%\\Documents",
-    "downloads": "%USERPROFILE%\\Downloads",
-    "desktop": "%USERPROFILE%\\Desktop",
-    "área de trabalho": "%USERPROFILE%\\Desktop",
-    "imagens": "%USERPROFILE%\\Pictures",
-    "músicas": "%USERPROFILE%\\Music",
-    "vídeos": "%USERPROFILE%\\Videos",
-    "disco c": "C:\\",
-    "raiz": "C:\\",
-}
+
+def _get_folder_aliases() -> dict:
+    """Returns folder aliases for all supported languages (merged)."""
+    merged = {}
+    for lang_aliases in FOLDER_ALIASES_I18N.values():
+        merged.update(lang_aliases)
+    return merged
 
 
 class FileControl:
@@ -41,10 +38,11 @@ class FileControl:
             return f"Erro ao executar {action}: {e}"
 
     def _resolve_path(self, path: str) -> str:
-        """Resolve aliases e variáveis de ambiente."""
+        """Resolve aliases and environment variables."""
         lower = path.lower()
-        if lower in FOLDER_ALIASES:
-            path = FOLDER_ALIASES[lower]
+        aliases = _get_folder_aliases()
+        if lower in aliases:
+            path = aliases[lower]
         return os.path.expandvars(path)
 
     def _open_explorer(self, params: dict) -> str:

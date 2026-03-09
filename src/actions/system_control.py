@@ -18,10 +18,9 @@ class SystemControl:
     """Controla o sistema operacional Windows."""
 
     APP_MAP = {
+        # Common / language-neutral
         "calc": "calc.exe",
-        "calculadora": "calc.exe",
         "notepad": "notepad.exe",
-        "bloco de notas": "notepad.exe",
         "explorer": "explorer.exe",
         "cmd": "cmd.exe",
         "powershell": "powershell.exe",
@@ -41,11 +40,25 @@ class SystemControl:
         "vscode": "code.exe",
         "visual studio code": "code.exe",
         "paint": "mspaint.exe",
-        "gerenciador de tarefas": "taskmgr.exe",
         "taskmgr": "taskmgr.exe",
         "regedit": "regedit.exe",
         "snippingtool": "snippingtool.exe",
         "snip": "snippingtool.exe",
+        # Portuguese
+        "calculadora": "calc.exe",
+        "bloco de notas": "notepad.exe",
+        "gerenciador de tarefas": "taskmgr.exe",
+        # Spanish
+        "bloc de notas": "notepad.exe",
+        "administrador de tareas": "taskmgr.exe",
+        "configuracion": "ms-settings:",
+        # English
+        "calculator": "calc.exe",
+        "text editor": "notepad.exe",
+        "file explorer": "explorer.exe",
+        "task manager": "taskmgr.exe",
+        "settings": "ms-settings:",
+        "snipping tool": "snippingtool.exe",
     }
 
     def execute(self, action: str, params: dict) -> str:

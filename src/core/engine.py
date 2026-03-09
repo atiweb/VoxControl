@@ -1,17 +1,19 @@
 """
-Engine principal: orquestra audio -> STT -> AI -> ação -> TTS.
+Engine principal: orquestra audio -> STT -> AI -> acao -> TTS.
 """
 
 import logging
 import time
 from typing import Optional
 
+from ..i18n import t
+
 logger = logging.getLogger(__name__)
 
 
 class VoiceEngine:
     """
-    Engine central que conecta todos os módulos.
+    Engine central que conecta todos os modulos.
     Pode ser usado tanto pelo listener de microfone
     quanto pela API remota (celular).
     """
@@ -26,13 +28,13 @@ class VoiceEngine:
         self._running = False
 
     def setup(self):
-        """Inicializa todos os módulos."""
+        """Inicializa todos os modulos."""
         from ..audio.transcriber import Transcriber
         from ..ai.intent_parser import IntentParser
         from ..actions.dispatcher import ActionDispatcher
         from ..voice.speaker import Speaker
 
-        logger.info("Inicializando módulos...")
+        logger.info("Initializing modules...")
 
         self._transcriber = Transcriber(self.config.get("stt", {}))
         self._intent_parser = IntentParser(self.config.get("ai", {}))
@@ -43,67 +45,70 @@ class VoiceEngine:
         })
         self._speaker = Speaker(self.config.get("voice_response", {}))
 
-        logger.info("Engine pronta.")
+        logger.info("Engine ready.")
 
     def process_audio(self, audio_data) -> Optional[str]:
         """
-        Processa áudio capturado: STT -> AI -> ação -> resposta.
+        Processa audio capturado: STT -> AI -> acao -> resposta.
         Retorna o texto da resposta.
         """
         if self._transcriber is None:
             return None
 
-        # 1. Transcrever áudio
+        # 1. Transcrever audio
         text = self._transcriber.transcribe(audio_data)
         if not text:
-            logger.debug("Nenhum texto detectado no áudio.")
+            logger.debug("No text detected in audio.")
             return None
 
         return self.process_text(text)
 
     def process_text(self, text: str) -> str:
         """
-        Processa texto direto (usado pelo controle remoto).
-        STT já feito, vai direto para AI -> ação -> resposta.
+        Processa texto direto (usado pelo controle remoto e modo texto).
+        STT ja feito, vai direto para AI -> acao -> resposta.
         """
-        logger.info(f"Comando recebido: '{text}'")
+        logger.info(f"Command received: '{text}'")
 
-        # 2. Verificar se aguarda confirmação
+        # 2. Verificar se aguarda confirmacao
         if self._pending_confirmation:
             return self._handle_confirmation(text)
 
-        # 3. Interpretar intenção via IA
+        # 3. Interpretar intencao via IA
         intent = self._intent_parser.parse(text)
         confidence = intent.get("confidence", 0)
         action = intent.get("action", "unknown")
         response_text = intent.get("response_text", "")
         requires_confirmation = intent.get("requires_confirmation", False)
 
-        logger.info(f"Intenção: {action} (confiança: {confidence:.2f})")
+        logger.info(f"Intent: {action} (confidence: {confidence:.2f})")
 
-        # 4. Confiança baixa: pedir para repetir
+        # 4. Confianca baixa: pedir para repetir
         min_conf = self.config.get("ai", {}).get("min_confidence", 0.6)
         if confidence < min_conf and action != "unknown":
-            response = f"Não tenho certeza. Quis dizer: {response_text}? Confirme dizendo 'sim' ou repita o comando."
+            response = t("not_sure", response=response_text)
             self._pending_confirmation = {"intent": intent, "original": text}
             self._speak(response)
             return response
 
-        # 5. Ações perigosas: pedir confirmação
+        # 5. Acoes perigosas: pedir confirmacao
         confirm_risky = self.config.get("ai", {}).get("confirm_risky_actions", True)
         if requires_confirmation and confirm_risky:
-            response = f"{response_text} Confirma?"
+            response = t("confirm_prompt", response=response_text)
             self._pending_confirmation = {"intent": intent, "original": text}
             self._speak(response)
             return response
 
-        # 6. Executar ação
+        # 6. Executar acao
         result = self._dispatcher.dispatch(intent)
-        self._speak(result)
-        return result
+        # Use the AI/offline response_text for speaking (already in correct language)
+        # Use dispatcher result only as fallback
+        spoken = response_text if response_text else result
+        self._speak(spoken)
+        return spoken
 
     def _handle_confirmation(self, text: str) -> str:
-        """Processa resposta de confirmação pendente."""
+        """Processa resposta de confirmacao pendente."""
         pending = self._pending_confirmation
         self._pending_confirmation = None
 
@@ -115,10 +120,12 @@ class VoiceEngine:
 
         if confirmed:
             result = self._dispatcher.dispatch(intent)
-            self._speak(result)
-            return result
+            response_text = intent.get("response_text", result)
+            spoken = response_text if response_text else result
+            self._speak(spoken)
+            return spoken
         else:
-            response = "Tudo bem, comando cancelado."
+            response = t("cancelled")
             self._speak(response)
             return response
 

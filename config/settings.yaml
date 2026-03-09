@@ -1,21 +1,23 @@
 # ============================================================
-# VoxControl — configurações gerais
+# VoxControl -- general settings
 # ============================================================
 
 app:
   name: "VoxControl"
-  version: "1.0.0"
-  language: "pt-BR"          # pt-BR ou pt-PT
+  version: "1.1.0"
+  # Language: pt-BR | pt-PT | es-ES | es-MX | en-US | en-GB
+  # Also accepts short codes: pt | es | en
+  language: "pt-BR"
 
 audio:
   sample_rate: 16000
   channels: 1
-  chunk_duration_ms: 30      # para VAD
-  # Dispositivo de microfone: null = padrão do sistema
+  chunk_duration_ms: 30      # for VAD
+  # Microphone device: null = system default
   input_device: null
-  # Silêncio para finalizar captura (segundos)
+  # Silence to end capture (seconds)
   silence_timeout: 1.5
-  # Volume mínimo para detectar fala (0.0 - 1.0)
+  # Minimum volume to detect speech (0.0 - 1.0)
   min_speech_energy: 0.01
 
 stt:
@@ -23,6 +25,8 @@ stt:
   engine: "faster-whisper"
   whisper:
     model_size: "small"      # tiny | base | small | medium | large-v3
+    # Language: auto-set based on app.language (pt, es, en)
+    # Override here only if needed
     language: "pt"
     device: "auto"           # auto | cpu | cuda
     compute_type: "int8"     # int8 | float16 | float32
@@ -33,20 +37,23 @@ stt:
 
 wake_word:
   enabled: true
-  word: "computador"         # palavra de ativação
-  # Alternativas aceitas (para variações de sotaque)
+  # Wake word: auto-set based on app.language
+  # pt: "computador" | es: "computadora" | en: "computer"
+  # Override here to use a custom wake word
+  word: "computador"
+  # Alternative triggers (accent variations)
   aliases:
-    - "computadô"
+    - "computado"
     - "ei computador"
     - "oi computador"
-  # Sensibilidade de detecção (0.0 - 1.0)
+  # Detection sensitivity (0.0 - 1.0)
   sensitivity: 0.7
-  listen_timeout: 6          # segundos após wake word
+  listen_timeout: 6          # seconds after wake word
 
 ai:
   # "claude" | "openai" | "offline"
   backend: "claude"
-  fallback: "openai"         # usado se o primário falhar
+  fallback: "openai"         # used if primary fails
   claude:
     model: "claude-haiku-4-5-20251001"
     max_tokens: 512
@@ -55,28 +62,28 @@ ai:
     model: "gpt-4o-mini"
     max_tokens: 512
     temperature: 0.1
-  # Confiança mínima para executar ação sem confirmar
+  # Minimum confidence to execute without confirmation
   min_confidence: 0.6
-  # Confirmar ações de alto risco por voz
+  # Confirm risky actions by voice
   confirm_risky_actions: true
 
 voice_response:
   enabled: true
-  # Velocidade da fala (palavras por minuto)
+  # Speech rate (words per minute)
   rate: 180
   # Volume (0.0 - 1.0)
   volume: 0.9
-  # Preferir voz feminina em PT
+  # Prefer female voice
   prefer_female: true
 
 browser:
   default: "chrome"          # chrome | edge | firefox
-  chrome_path: null          # null = detectar automaticamente
+  chrome_path: null          # null = auto-detect
   edge_path: null
   firefox_path: null
 
 office:
-  # true = usar API COM (mais confiável), false = usar atalhos de teclado
+  # true = use COM API (more reliable), false = use keyboard shortcuts
   use_com_api: true
   confirm_before_delete: true
 
@@ -84,9 +91,9 @@ remote:
   enabled: true
   host: "0.0.0.0"
   port: 8765
-  # Gerar QR code no início
+  # Show QR code on startup
   show_qr: true
-  # Autenticação básica (deixe vazio para desabilitar)
+  # Basic auth (leave empty to disable)
   auth_token: ""
 
 logging:

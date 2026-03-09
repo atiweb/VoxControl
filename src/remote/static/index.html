@@ -217,47 +217,98 @@
 <body>
 
 <header>
-  <h1>🎙️ VoxControl</h1>
-  <div id="status-dot" title="Desconectado"></div>
+  <h1>VoxControl</h1>
+  <div id="status-dot"></div>
 </header>
 
 <div id="log">
-  <div class="msg system">Conectando ao computador...</div>
+  <div class="msg system" id="initial-msg">Connecting...</div>
 </div>
 
 <section id="mic-section">
   <!-- Quick commands -->
   <div id="quick-cmds">
-    <button class="quick-btn" data-cmd="abrir chrome">Chrome</button>
-    <button class="quick-btn" data-cmd="abrir whatsapp">WhatsApp</button>
-    <button class="quick-btn" data-cmd="tirar print">Print</button>
-    <button class="quick-btn" data-cmd="play pause">▶/⏸</button>
-    <button class="quick-btn" data-cmd="aumentar volume">Vol +</button>
-    <button class="quick-btn" data-cmd="diminuir volume">Vol -</button>
-    <button class="quick-btn" data-cmd="minimizar">Minimizar</button>
-    <button class="quick-btn" data-cmd="bloquear tela">Bloquear</button>
+    <button class="quick-btn" data-cmd-key="qc_chrome">Chrome</button>
+    <button class="quick-btn" data-cmd-key="qc_whatsapp">WhatsApp</button>
+    <button class="quick-btn" data-cmd-key="qc_screenshot">Print</button>
+    <button class="quick-btn" data-cmd="play pause">&#9654;/&#9208;</button>
+    <button class="quick-btn" data-cmd-key="qc_vol_up">Vol +</button>
+    <button class="quick-btn" data-cmd-key="qc_vol_down">Vol -</button>
+    <button class="quick-btn" data-cmd-key="qc_minimize">Min</button>
+    <button class="quick-btn" data-cmd-key="qc_lock">Lock</button>
   </div>
 
   <!-- Text input -->
   <form id="text-form">
-    <input type="text" id="text-input" placeholder="Digite um comando..." autocomplete="off" />
+    <input type="text" id="text-input" placeholder="Type a command..." autocomplete="off" />
     <button type="submit" id="send-btn">
       <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
     </button>
   </form>
 
   <!-- Mic button -->
-  <button id="mic-btn" aria-label="Segurar para falar">
+  <button id="mic-btn" aria-label="Hold to speak">
     <svg id="mic-icon" viewBox="0 0 24 24">
       <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
     </svg>
   </button>
-  <p id="mic-status">Segure o botão para falar</p>
+  <p id="mic-status">Hold button to speak</p>
 </section>
 
 <script>
   // ---- CONFIG ----
   const WS_URL = `ws${location.protocol === 'https:' ? 's' : ''}://${location.host}/ws`;
+
+  // ---- I18N (defaults, overridden by server config) ----
+  let I18N = {
+    language: 'pt-BR',
+    connecting: 'Connecting...',
+    connected: 'Connected.',
+    disconnected: 'Disconnected. Reconnecting...',
+    connection_error: 'Connection error.',
+    no_connection: 'No connection.',
+    mic_error: 'Could not access microphone.',
+    hold_to_speak: 'Hold button to speak',
+    listening: 'Listening... release to send',
+    processing: 'Processing...',
+    placeholder: 'Type a command...',
+    qc_chrome: 'open chrome',
+    qc_whatsapp: 'open whatsapp',
+    qc_screenshot: 'take screenshot',
+    qc_vol_up: 'volume up',
+    qc_vol_down: 'volume down',
+    qc_minimize: 'minimize',
+    qc_lock: 'lock screen',
+  };
+
+  function applyI18N(config) {
+    I18N = { ...I18N, ...config };
+
+    // Update placeholder
+    document.getElementById('text-input').placeholder = I18N.placeholder;
+
+    // Update mic status
+    if (!isListening) {
+      document.getElementById('mic-status').textContent = I18N.hold_to_speak;
+    }
+
+    // Update initial message
+    const initMsg = document.getElementById('initial-msg');
+    if (initMsg) initMsg.textContent = I18N.connecting;
+
+    // Update quick command data-cmd values
+    document.querySelectorAll('.quick-btn[data-cmd-key]').forEach(btn => {
+      const key = btn.dataset.cmdKey;
+      if (I18N[key]) {
+        btn.dataset.cmd = I18N[key];
+      }
+    });
+
+    // Update SpeechRecognition language
+    if (speechRecognition) {
+      speechRecognition.lang = I18N.language;
+    }
+  }
 
   // ---- STATE ----
   let ws = null;
@@ -288,9 +339,9 @@
   function setMicState(state) {
     micBtn.className = state;
     const labels = {
-      '': 'Segure o botão para falar',
-      listening: 'Ouvindo... solte para enviar',
-      processing: 'Processando...',
+      '': I18N.hold_to_speak,
+      listening: I18N.listening,
+      processing: I18N.processing,
     };
     micStatus.textContent = labels[state] || labels[''];
   }
@@ -302,36 +353,38 @@
 
     ws.onopen = () => {
       statusDot.classList.add('connected');
-      addMsg('Conectado ao computador.', 'system');
       clearTimeout(reconnectTimer);
     };
 
     ws.onclose = () => {
       statusDot.classList.remove('connected');
-      addMsg('Desconectado. Reconectando...', 'system');
+      addMsg(I18N.disconnected, 'system');
       reconnectTimer = setTimeout(connect, 3000);
     };
 
     ws.onerror = () => {
-      addMsg('Erro de conexão.', 'system');
+      addMsg(I18N.connection_error, 'system');
     };
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      if (msg.type === 'response' || msg.type === 'broadcast') {
-        addMsg(msg.data, 'pc');
-        setMicState('');
+      if (msg.type === 'config') {
+        // Server sends language config
+        applyI18N(msg.data);
       } else if (msg.type === 'status') {
         if (msg.data === 'connected') {
-          // já tratado no onopen
+          addMsg(I18N.connected, 'system');
         }
+      } else if (msg.type === 'response' || msg.type === 'broadcast') {
+        addMsg(msg.data, 'pc');
+        setMicState('');
       }
     };
   }
 
   function sendText(text) {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
-      addMsg('Sem conexão com o computador.', 'system');
+      addMsg(I18N.no_connection, 'system');
       return;
     }
     addMsg(text, 'user');
@@ -351,16 +404,19 @@
 
   // ---- QUICK COMMANDS ----
   document.querySelectorAll('.quick-btn').forEach(btn => {
-    btn.addEventListener('click', () => sendText(btn.dataset.cmd));
+    btn.addEventListener('click', () => {
+      const cmd = btn.dataset.cmd || btn.dataset.cmdKey;
+      if (cmd) sendText(cmd);
+    });
   });
 
-  // ---- MIC — Web Speech API (melhor para mobile com HTTPS) ----
+  // ---- MIC -- Web Speech API (best for mobile with HTTPS) ----
   function setupSpeechRecognition() {
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRec) return false;
 
     speechRecognition = new SpeechRec();
-    speechRecognition.lang = 'pt-BR';
+    speechRecognition.lang = I18N.language;
     speechRecognition.continuous = false;
     speechRecognition.interimResults = false;
 
@@ -370,7 +426,7 @@
     };
 
     speechRecognition.onerror = (event) => {
-      addMsg(`Erro no microfone: ${event.error}`, 'system');
+      addMsg(`${I18N.mic_error}: ${event.error}`, 'system');
       setMicState('');
       isListening = false;
     };
@@ -385,7 +441,7 @@
     return true;
   }
 
-  // ---- MIC — MediaRecorder fallback (PCM para enviar ao servidor) ----
+  // ---- MIC -- MediaRecorder fallback (PCM for server) ----
   async function startMediaRecorder() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -413,7 +469,7 @@
       isListening = true;
       return true;
     } catch (err) {
-      addMsg('Não foi possível acessar o microfone.', 'system');
+      addMsg(I18N.mic_error, 'system');
       return false;
     }
   }
@@ -444,7 +500,7 @@
     }
   }, { passive: false });
 
-  // Click para desktop
+  // Click for desktop
   micBtn.addEventListener('click', () => {
     if (isListening) {
       if (useSpeechAPI) { try { speechRecognition.stop(); } catch(e) {} }
