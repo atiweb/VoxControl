@@ -50,7 +50,7 @@ There was no complete, ready-to-use open source solution for voice control of Wi
 
 ```bash
 # 1. Clone o repositorio
-git clone https://github.com/SEU_USUARIO/VoxControl.git
+git clone https://github.com/atiweb/VoxControl.git
 cd VoxControl
 
 # 2. Crie e ative ambiente virtual

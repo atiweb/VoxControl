@@ -41,7 +41,7 @@ Se ainda nao tem Python instalado:
 ### 2. Clonar o repositorio
 
 ```bash
-git clone https://github.com/SEU_USUARIO/VoxControl.git
+git clone https://github.com/atiweb/VoxControl.git
 cd VoxControl
 ```
 
