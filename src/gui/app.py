@@ -321,6 +321,14 @@ class VoxControlApp(ctk.CTk):
         except Exception as e:
             self.log_frame.add_entry("error", f"Failed to save settings: {e}")
 
+        # Re-init AI clients if engine is running (picks up new API keys from os.environ)
+        if self._engine and hasattr(self._engine, "intent_parser"):
+            try:
+                self._engine.intent_parser._init_clients()
+                self.log_frame.add_entry("system", "AI clients reloaded.")
+            except Exception as e:
+                self.log_frame.add_entry("error", f"Failed to reload AI clients: {e}")
+
     # ────────────────────────────────────────────────────────────────
     # Logging integration
     # ────────────────────────────────────────────────────────────────
