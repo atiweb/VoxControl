@@ -1,226 +1,245 @@
-# Controle Remoto pelo Celular
+# Remote Control via Smartphone
 
-Use seu smartphone como controle remoto do PC, sem fio, pela rede Wi-Fi local.
+Use your smartphone as a wireless PC remote control over local Wi-Fi.
 
 ---
 
-## Como funciona
+## How It Works
 
-O VoxControl inicia um servidor web no PC. Seu celular acessa esse servidor pelo navegador e envia comandos por voz ou texto. A comunicacao e em tempo real via WebSocket.
+VoxControl starts a web server on the PC. Your phone accesses this server through the browser and sends voice or text commands. Communication is real-time via WebSocket.
 
 ```
-Celular (navegador)  <----Wi-Fi---->  PC (servidor FastAPI)
+Phone (browser)    <----Wi-Fi---->    PC (FastAPI server)
      |                                       |
      | WebSocket / HTTP                      | VoiceEngine
      |                                       |
-   Voz ou Texto  -------->  Transcricao + IA + Acao
-                  <--------  Resposta de texto
+   Voice or Text  -------->  Transcription + AI + Action
+                   <--------  Text response
 ```
 
 ---
 
-## Configuracao basica
+## Language Adaptation
 
-### 1. Iniciar o servidor
+The mobile interface **automatically adapts to the configured language**. When the phone connects via WebSocket, the server sends a `config` message with all UI strings in the active language. This includes:
 
-Por padrao, o servidor remoto e habilitado. Basta iniciar normalmente:
+- Placeholder text
+- Status messages (connecting, connected, disconnected)
+- Quick command button values
+- Speech recognition language (Web Speech API)
+
+Change language on the server (e.g., `--lang en`), and the mobile UI updates automatically.
+
+---
+
+## Basic Setup
+
+### 1. Start the server
+
+By default, the remote server is enabled. Just start normally:
 
 ```bash
 python -m src.main
 ```
 
-O terminal mostrara:
+The terminal will show:
 
 ```
-  CONTROLE REMOTO DISPONIVEL
-  Conecte pelo celular: http://192.168.1.100:8765
-  [QR CODE aqui]
+  REMOTE CONTROL AVAILABLE
+  Connect from your phone: http://192.168.1.100:8765
+  [QR CODE here]
 ```
 
-### 2. Conectar o celular
+> The banner text adapts to the configured language (PT/ES/EN).
 
-1. Celular e PC devem estar na **mesma rede Wi-Fi**
-2. Abra o navegador do celular (Chrome, Safari, etc.)
-3. Acesse o endereco mostrado no terminal (ex: `http://192.168.1.100:8765`)
-4. Ou escaneie o QR Code com a camera
+### 2. Connect your phone
 
-### 3. Usar
+1. Phone and PC must be on the **same Wi-Fi network**
+2. Open the phone browser (Chrome, Safari, etc.)
+3. Navigate to the address shown in terminal (e.g., `http://192.168.1.100:8765`)
+4. Or scan the QR code with your camera
 
-A interface mobile oferece:
+### 3. Use it
 
-- **Botao de microfone**: segure para falar (se HTTPS configurado)
-- **Campo de texto**: digite comandos (sempre funciona)
-- **Botoes rapidos**: acoes comuns com um toque
+The mobile interface offers:
+
+- **Microphone button**: hold to speak (HTTPS required)
+- **Text field**: type commands (always works)
+- **Quick buttons**: common actions with one tap
 
 ---
 
-## Interface mobile
+## Mobile Interface
 
-A interface web foi projetada para uso no celular com design escuro e responsivo.
+The web interface is designed for mobile use with a dark, responsive layout.
 
-### Elementos
+### Elements
 
-| Elemento | Funcao |
-|----------|--------|
-| Indicador verde/vermelho | Status da conexao (conectado/desconectado) |
-| Area de mensagens | Historico de comandos e respostas (estilo chat) |
-| Botoes rapidos | Chrome, WhatsApp, Print, Play/Pause, Volume, Minimizar, Bloquear |
-| Campo de texto | Digitar comandos manualmente |
-| Botao de microfone | Segure para falar (requer HTTPS para mic) |
+| Element | Function |
+|---------|----------|
+| Green/red indicator | Connection status (connected/disconnected) |
+| Message area | Command and response history (chat style) |
+| Quick buttons | Chrome, WhatsApp, Screenshot, Play/Pause, Volume, Minimize, Lock |
+| Text field | Type commands manually |
+| Microphone button | Hold to speak (requires HTTPS for mic) |
 
-### Botoes rapidos incluidos
+### Quick Buttons
 
-- **Chrome** -- abre o Google Chrome
-- **WhatsApp** -- abre WhatsApp Web
-- **Print** -- tira screenshot
-- **Play/Pause** -- controla midia
-- **Vol +** / **Vol -** -- ajusta volume
-- **Minimizar** -- minimiza janela atual
-- **Bloquear** -- bloqueia a tela
+Quick buttons send localized commands based on the server language:
+
+| Button | PT Command | ES Command | EN Command |
+|--------|-----------|-----------|-----------|
+| Chrome | abrir chrome | abrir chrome | open chrome |
+| WhatsApp | abrir whatsapp | abrir whatsapp | open whatsapp |
+| Screenshot | tirar print | captura de pantalla | take screenshot |
+| Vol + | aumentar volume | subir volumen | volume up |
+| Vol - | diminuir volume | bajar volumen | volume down |
+| Minimize | minimizar | minimizar | minimize |
+| Lock | bloquear tela | bloquear pantalla | lock screen |
 
 ---
 
-## Configuracao HTTPS (para microfone no celular)
+## HTTPS Setup (for phone microphone)
 
-Browsers modernos **exigem HTTPS** para acessar o microfone em redes locais.
-Sem HTTPS, o campo de texto ainda funciona, mas o botao de microfone nao.
+Modern browsers **require HTTPS** to access the microphone on local networks.
+Without HTTPS, the text field still works, but the microphone button won't.
 
-### Gerar certificado auto-assinado
+### Generate a self-signed certificate
 
 ```bash
-# Requer OpenSSL instalado
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=voz-controle"
+# Requires OpenSSL installed
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=voxcontrol"
 ```
 
-### Configurar no .env
+### Configure in .env
 
 ```env
 SSL_CERTFILE=cert.pem
 SSL_KEYFILE=key.pem
 ```
 
-### No celular
+### On the phone
 
-1. Acesse `https://192.168.1.100:8765` (note o **https**)
-2. O navegador mostrara aviso de certificado nao confiavel
-3. Aceite/prossiga (isso e normal para certificados auto-assinados)
-4. Agora o microfone funciona
+1. Navigate to `https://192.168.1.100:8765` (note the **https**)
+2. The browser will show an untrusted certificate warning
+3. Accept/proceed (this is normal for self-signed certificates)
+4. Now the microphone works
 
 ---
 
-## API HTTP
+## HTTP API
 
-Alem da interface web, o servidor expoe endpoints HTTP para integracao programatica.
+In addition to the web interface, the server exposes HTTP endpoints for programmatic integration.
 
 ### GET /status
 
-Verifica se o servidor esta online.
+Check if the server is online.
 
 ```bash
 curl http://192.168.1.100:8765/status
 ```
 
-Resposta:
+Response:
 ```json
 {
   "status": "online",
   "engine_ready": true,
-  "connected_clients": 1
+  "connected_clients": 1,
+  "language": "en"
 }
 ```
 
-### POST /command
-
-Envia um comando de texto.
-
-```bash
-curl -X POST http://192.168.1.100:8765/command \
-  -H "Content-Type: application/json" \
-  -d '{"text": "abrir calculadora"}'
-```
-
-Resposta:
-```json
-{
-  "command": "abrir calculadora",
-  "response": "Calc aberto."
-}
-```
+> The `language` field shows the current server language.
 
 ---
 
-## Protocolo WebSocket
+## WebSocket Protocol
 
-Para comunicacao em tempo real, conecte via WebSocket em `ws://IP:8765/ws` (ou `wss://` com HTTPS).
+For real-time communication, connect via WebSocket at `ws://IP:8765/ws` (or `wss://` with HTTPS).
 
-### Mensagens do cliente para o servidor
+### Server -> Client messages
 
 ```json
-// Comando de texto
-{"type": "text", "data": "abrir chrome"}
+// Config (sent immediately on connect, contains language strings)
+{"type": "config", "data": {"language": "en-US", "connecting": "Connecting...", ...}}
 
-// Audio em base64 (PCM float32 16kHz)
+// Status
+{"type": "status", "data": "connected"}
+
+// Response to a command
+{"type": "response", "data": "Chrome opened."}
+
+// Pong (reply to ping)
+{"type": "pong"}
+
+// Broadcast (message to all clients)
+{"type": "broadcast", "data": "Some notification"}
+```
+
+### Client -> Server messages
+
+```json
+// Text command
+{"type": "text", "data": "open chrome"}
+
+// Base64 audio (PCM float32 16kHz)
 {"type": "audio_b64", "data": "AAAA...base64..."}
 
 // Ping
 {"type": "ping"}
 ```
 
-### Mensagens do servidor para o cliente
-
-```json
-// Resposta a um comando
-{"type": "response", "data": "Chrome aberto."}
-
-// Status de conexao
-{"type": "status", "data": "connected"}
-
-// Pong (resposta a ping)
-{"type": "pong"}
-
-// Broadcast (mensagem para todos os clientes)
-{"type": "broadcast", "data": "Alguma notificacao"}
-```
-
-### Exemplo em Python
+### Python Example
 
 ```python
 import asyncio
 import json
 import websockets
 
-async def controlar():
+async def control():
     async with websockets.connect("ws://192.168.1.100:8765/ws") as ws:
-        # Enviar comando
-        await ws.send(json.dumps({"type": "text", "data": "abrir calculadora"}))
+        # Receive config
+        config = json.loads(await ws.recv())
+        print(f"Language: {config['data']['language']}")
 
-        # Receber resposta
+        # Receive status
+        status = json.loads(await ws.recv())
+        print(f"Status: {status['data']}")
+
+        # Send command
+        await ws.send(json.dumps({"type": "text", "data": "open calculator"}))
+
+        # Receive response
         resp = json.loads(await ws.recv())
-        print(f"Resposta: {resp['data']}")
+        print(f"Response: {resp['data']}")
 
-asyncio.run(controlar())
+asyncio.run(control())
 ```
 
-### Exemplo em JavaScript
+### JavaScript Example
 
 ```javascript
 const ws = new WebSocket("ws://192.168.1.100:8765/ws");
 
-ws.onopen = () => {
-    ws.send(JSON.stringify({type: "text", data: "abrir chrome"}));
-};
-
 ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    console.log("Resposta:", msg.data);
+    if (msg.type === "config") {
+        console.log("Language:", msg.data.language);
+    } else if (msg.type === "response") {
+        console.log("Response:", msg.data);
+    }
+};
+
+ws.onopen = () => {
+    ws.send(JSON.stringify({type: "text", data: "open chrome"}));
 };
 ```
 
 ---
 
-## Configuracao avancada
+## Advanced Configuration
 
-### Mudar a porta
+### Change the port
 
 ```yaml
 # config/settings.yaml
@@ -228,52 +247,52 @@ remote:
   port: 9090
 ```
 
-Ou via `.env`:
+Or via `.env`:
 ```env
 REMOTE_SERVER_PORT=9090
 ```
 
-### Desabilitar QR Code
+### Disable QR Code
 
 ```yaml
 remote:
   show_qr: false
 ```
 
-### Desabilitar servidor remoto
+### Disable remote server
 
 ```bash
 python -m src.main --no-remote
 ```
 
-Ou em `settings.yaml`:
+Or in `settings.yaml`:
 ```yaml
 remote:
   enabled: false
 ```
 
-### Autenticacao basica
+### Basic authentication
 
-Defina um token em `settings.yaml`:
+Set a token in `settings.yaml`:
 ```yaml
 remote:
-  auth_token: "meu_token_secreto_123"
+  auth_token: "my_secret_token_123"
 ```
 
-Os clientes precisarao enviar este token nas requisicoes.
+Clients will need to send this token in their requests.
 
 ---
 
-## Multiplos clientes
+## Multiple Clients
 
-O servidor suporta multiplos celulares/tablets conectados simultaneamente. Todos podem enviar comandos e todos recebem as respostas.
+The server supports multiple phones/tablets connected simultaneously. All can send commands and all receive responses.
 
 ---
 
-## Limitacoes conhecidas
+## Known Limitations
 
-1. **Microfone requer HTTPS**: sem certificado SSL, o campo de texto e a unica opcao
-2. **Mesma rede Wi-Fi**: nao funciona pela internet (por seguranca)
-3. **Latencia**: depende da qualidade da rede Wi-Fi local (~100-500ms tipico)
-4. **Web Speech API**: o reconhecimento de voz no celular usa a API do navegador, que pode requerer internet (Google Speech) mesmo que o PC use Whisper offline
-5. **iOS Safari**: pode ter restricoes adicionais para Web Speech API
+1. **Microphone requires HTTPS**: without SSL certificate, the text field is the only option
+2. **Same Wi-Fi network**: does not work over the internet (for security)
+3. **Latency**: depends on local Wi-Fi quality (~100-500ms typical)
+4. **Web Speech API**: voice recognition on the phone uses the browser API, which may require internet (Google Speech) even if the PC uses Whisper offline
+5. **iOS Safari**: may have additional restrictions for Web Speech API

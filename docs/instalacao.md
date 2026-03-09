@@ -1,95 +1,98 @@
-# Guia de Instalacao
+# Installation Guide
 
-Guia completo para instalar e configurar o VoxControl no Windows.
-
----
-
-## Requisitos do sistema
-
-### Obrigatorios
-
-| Requisito | Detalhes |
-|-----------|----------|
-| **Sistema operacional** | Windows 10 ou 11 (64-bit) |
-| **Python** | 3.10 ou superior |
-| **RAM** | Minimo 4GB (8GB recomendado para modelo `small`) |
-| **Microfone** | Qualquer microfone USB ou integrado |
-| **Espaco em disco** | ~1GB para dependencias + ~500MB para modelo Whisper `small` |
-
-### Opcionais
-
-| Requisito | Para que serve |
-|-----------|----------------|
-| Microsoft Office | Controle avancado via COM API (Word, Excel, PowerPoint) |
-| GPU NVIDIA (CUDA) | Aceleracao do Whisper (transcricao mais rapida) |
-| Chave API Claude | Compreensao avancada de linguagem natural |
-| Chave API OpenAI | Alternativa ao Claude |
-| OpenSSL | Gerar certificado HTTPS para microfone no celular |
+Complete guide to install and configure VoxControl on Windows.
 
 ---
 
-## Instalacao passo a passo
+## System Requirements
 
-### 1. Instalar Python
+### Required
 
-Se ainda nao tem Python instalado:
+| Requirement | Details |
+|-------------|---------|
+| **Operating System** | Windows 10 or 11 (64-bit) |
+| **Python** | 3.10 or higher |
+| **RAM** | Minimum 4GB (8GB recommended for `small` model) |
+| **Microphone** | Any USB or built-in microphone |
+| **Disk space** | ~1GB for dependencies + ~500MB for Whisper `small` model |
 
-1. Baixe em https://www.python.org/downloads/
-2. **IMPORTANTE**: marque "Add Python to PATH" durante a instalacao
-3. Verifique: `python --version` (deve mostrar 3.10+)
+### Optional
 
-### 2. Clonar o repositorio
+| Requirement | Purpose |
+|-------------|---------|
+| Microsoft Office | Advanced control via COM API (Word, Excel, PowerPoint) |
+| NVIDIA GPU (CUDA) | Whisper acceleration (faster transcription) |
+| Claude API key | Advanced natural language comprehension |
+| OpenAI API key | Alternative to Claude |
+| OpenSSL | Generate HTTPS certificate for phone microphone |
+
+---
+
+## Step-by-step Installation
+
+### 1. Install Python
+
+If you don't have Python installed:
+
+1. Download from https://www.python.org/downloads/
+2. **IMPORTANT**: check "Add Python to PATH" during installation
+3. Verify: `python --version` (should show 3.10+)
+
+### 2. Clone the repository
 
 ```bash
 git clone https://github.com/atiweb/VoxControl.git
 cd VoxControl
 ```
 
-Ou baixe o ZIP pelo GitHub e extraia.
+Or download the ZIP from GitHub and extract it.
 
-### 3. Criar ambiente virtual (recomendado)
+### 3. Create virtual environment (recommended)
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
-Voce sabera que esta ativo quando ver `(.venv)` no inicio da linha de comando.
+You'll know it's active when you see `(.venv)` at the beginning of the command line.
 
-### 4. Instalar dependencias
+### 4. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Isso instala ~40 pacotes. Aguarde 2-3 minutos.
+This installs ~40 packages. Wait 2-3 minutes.
 
-### 5. Configurar variaveis de ambiente
+### 5. Configure environment variables
 
 ```bash
 copy .env.example .env
 ```
 
-Abra o arquivo `.env` em um editor de texto e configure:
+Open the `.env` file in a text editor and configure:
 
 ```env
-# Pelo menos uma chave de API e recomendada (nao obrigatoria)
-ANTHROPIC_API_KEY=sua_chave_aqui
-OPENAI_API_KEY=sua_chave_aqui
+# Set your language (pt-BR, es-ES, en-US, or short: pt, es, en)
+APP_LANGUAGE=pt-BR
 
-# Ou use sem API
+# At least one API key is recommended (not required)
+ANTHROPIC_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
+
+# Or use without API
 AI_BACKEND=offline
 ```
 
-### 6. Verificar instalacao
+### 6. Verify installation
 
 ```bash
 python -m src.main --setup
 ```
 
-Saida esperada:
+Expected output:
 ```
-Verificando instalacao...
+Checking installation...
   OK  faster-whisper
   OK  sounddevice
   OK  pyautogui
@@ -103,82 +106,136 @@ Verificando instalacao...
   OK  python-dotenv
   OK  pywin32 (Office COM)
   OK  qrcode
-  OK  vosk (opcional)
+  OK  vosk (optional)
 
-  OK  Chave Claude encontrada
-  --  Chave OpenAI nao configurada
+  OK  Claude key found
+  --  OpenAI key not configured (optional but recommended)
 
-Tudo pronto! Execute: python -m src.main
+All ready! Run: python -m src.main
 ```
 
-### 7. Primeiro uso
+### 7. First use
 
 ```bash
-# Modo texto (recomendado para primeiro teste)
+# Text mode (recommended for first test)
 python -m src.main --text --no-voice
 
-# Digite comandos para testar:
->>> abrir calculadora
--> Calc aberto.
->>> pesquisar tempo em sao paulo
--> Pesquisando 'tempo em sao paulo' no Google.
->>> sair
+# Type commands to test:
+>>> open calculator
+-> Opening calculator.
+>>> search weather today
+-> Searching for weather today.
+>>> exit
 ```
 
-### 8. Uso com microfone
+For a specific language:
+```bash
+# Portuguese
+python -m src.main --text --no-voice --lang pt
+>>> abrir calculadora
+>>> pesquisar tempo em sao paulo
+>>> sair
+
+# Spanish
+python -m src.main --text --no-voice --lang es
+>>> abrir calculadora
+>>> buscar clima hoy
+>>> salir
+
+# English
+python -m src.main --text --no-voice --lang en
+>>> open calculator
+>>> search weather today
+>>> exit
+```
+
+### 8. Microphone usage
 
 ```bash
-# Modo wake word
+# Wake word mode (default)
 python -m src.main
+# Say "computador" (PT), "computadora" (ES), or "computer" (EN) to activate
 
-# Modo Push-to-Talk (segure F12)
+# Push-to-Talk (hold F12)
 python -m src.main --ptt
+
+# With a specific language
+python -m src.main --lang es
+python -m src.main --ptt --lang en
 ```
 
-No primeiro uso com microfone, o modelo Whisper `small` (~500MB) sera baixado automaticamente do Hugging Face. Isso acontece apenas uma vez.
+On first use with microphone, the Whisper `small` model (~500MB) will be automatically downloaded from Hugging Face. This happens only once.
 
 ---
 
-## Obtendo chaves de API
+## Language Configuration
 
-### Claude (Anthropic) - Recomendado
+VoxControl supports 3 languages. The language setting automatically configures:
 
-1. Acesse https://console.anthropic.com/
-2. Crie uma conta
-3. Va em "API Keys"
-4. Crie uma nova chave
-5. Copie para `.env` como `ANTHROPIC_API_KEY=sk-ant-...`
+- **Whisper STT language** (speech recognition)
+- **Wake word** ("computador" / "computadora" / "computer")
+- **TTS voice** (selects appropriate voice for the language)
+- **AI system prompt** (responses in the correct language)
+- **Offline command rules** (~35 commands per language)
+- **Mobile UI** (buttons, messages, speech recognition)
 
-O modelo padrao (`claude-haiku-4-5`) custa aproximadamente $0.001 por comando. Para uso tipico (100 comandos/dia), o custo e de ~$3/mes.
+### Priority order
+
+1. CLI flag: `--lang es` (highest priority)
+2. Environment variable: `APP_LANGUAGE=es` in `.env`
+3. Config file: `app.language: "es-ES"` in `settings.yaml`
+4. Default: `pt-BR`
+
+### Accepted language codes
+
+| Short | Full | Description |
+|-------|------|-------------|
+| `pt` | `pt-BR`, `pt-PT` | Portuguese (Brazil or Portugal) |
+| `es` | `es-ES`, `es-MX` | Spanish (Spain or Mexico) |
+| `en` | `en-US`, `en-GB` | English (US or UK) |
+
+---
+
+## Getting API Keys
+
+### Claude (Anthropic) - Recommended
+
+1. Go to https://console.anthropic.com/
+2. Create an account
+3. Go to "API Keys"
+4. Create a new key
+5. Copy to `.env` as `ANTHROPIC_API_KEY=sk-ant-...`
+
+The default model (`claude-haiku-4-5`) costs approximately $0.001 per command. For typical usage (100 commands/day), the cost is ~$3/month.
 
 ### OpenAI
 
-1. Acesse https://platform.openai.com/
-2. Crie uma conta
-3. Va em "API Keys"
-4. Crie uma nova chave
-5. Copie para `.env` como `OPENAI_API_KEY=sk-...`
+1. Go to https://platform.openai.com/
+2. Create an account
+3. Go to "API Keys"
+4. Create a new key
+5. Copy to `.env` as `OPENAI_API_KEY=sk-...`
 
-O modelo padrao (`gpt-4o-mini`) tem custo similar ao Claude.
+The default model (`gpt-4o-mini`) has similar cost to Claude.
 
-### Modo offline (sem API)
+### Offline mode (no API)
 
-Se nao quiser usar APIs pagas, configure:
+If you don't want to use paid APIs:
 ```env
 AI_BACKEND=offline
 ```
 
-O modo offline reconhece ~40 comandos diretos em portugues. Funciona bem para acoes comuns como "abrir chrome", "copiar", "salvar", mas nao entende linguagem natural complexa.
+Offline mode recognizes ~35 direct commands per language. Works well for common actions like "open chrome", "copy", "save", but doesn't understand complex natural language.
 
 ---
 
-## Configuracao de GPU (opcional)
+## GPU Configuration (optional)
 
-Se voce tem uma GPU NVIDIA, o Whisper pode usar CUDA para transcricao mais rapida:
+If you have an NVIDIA GPU, Whisper can use CUDA for faster transcription:
 
-1. Instale CUDA Toolkit: https://developer.nvidia.com/cuda-downloads
-2. Instale cuDNN
-3. No `config/settings.yaml`:
+1. Install CUDA Toolkit: https://developer.nvidia.com/cuda-downloads
+2. Install cuDNN
+3. In `config/settings.yaml`:
 ```yaml
 stt:
   whisper:
@@ -186,7 +243,7 @@ stt:
     compute_type: "float16"
 ```
 
-Sem GPU, o Whisper funciona na CPU normalmente (um pouco mais lento, mas perfeitamente funcional).
+Without a GPU, Whisper works fine on CPU (slightly slower but perfectly functional).
 
 ---
 
@@ -198,45 +255,55 @@ pip install sounddevice
 ```
 
 ### "webrtcvad requires Visual C++ Build Tools"
-O webrtcvad e opcional e esta comentado no requirements.txt. O Whisper ja tem VAD integrado.
+webrtcvad is optional and is commented out in requirements.txt. Whisper already has built-in VAD.
 
-### O microfone nao e detectado
-1. Verifique nas configuracoes do Windows se o microfone esta habilitado
-2. Teste: `python -c "import sounddevice; print(sounddevice.query_devices())"`
-3. Se tiver multiplos microfones, configure em `settings.yaml`:
+### Microphone not detected
+1. Check Windows settings to ensure the microphone is enabled
+2. Test: `python -c "import sounddevice; print(sounddevice.query_devices())"`
+3. If you have multiple microphones, configure in `settings.yaml`:
 ```yaml
 audio:
-  input_device: 1  # numero do dispositivo
+  input_device: 1  # device number
 ```
 
-### Whisper demora muito para carregar
-Na primeira execucao, o modelo e baixado (~500MB para `small`). Execucoes subsequentes sao rapidas (3-5 segundos). Se quiser um modelo menor:
+### Whisper takes too long to load
+On first run, the model is downloaded (~500MB for `small`). Subsequent runs are fast (3-5 seconds). If you want a smaller model:
 ```yaml
 stt:
   whisper:
-    model_size: "base"  # ~150MB, mais rapido
+    model_size: "base"  # ~150MB, faster
 ```
 
-### "UnicodeEncodeError" no terminal
-O terminal do Windows pode nao suportar caracteres especiais. Execute com:
+### "UnicodeEncodeError" in terminal
+The Windows terminal may not support special characters. Run with:
 ```bash
 set PYTHONIOENCODING=utf-8
 python -m src.main
 ```
 
-### APIs retornam erro
-- Verifique se a chave de API esta correta no `.env`
-- Verifique se tem creditos na sua conta
-- O sistema fara fallback automatico para o parser offline
+### APIs return errors
+- Verify the API key is correct in `.env`
+- Check you have credits in your account
+- The system will automatically fallback to offline parser
 
-### Office nao responde aos comandos
-- Verifique se o Microsoft Office esta instalado
-- O controle via COM API requer que o app esteja aberto
-- Alternativa: os atalhos de teclado funcionam mesmo sem a COM API
+### Office doesn't respond to commands
+- Verify Microsoft Office is installed
+- COM API control requires the app to be open
+- Alternative: keyboard shortcuts work even without COM API
+
+### No voice found for my language
+Windows may not have TTS voices installed for all languages. To check available voices:
+```python
+import pyttsx3
+engine = pyttsx3.init()
+for v in engine.getProperty('voices'):
+    print(v.id, v.name)
+```
+For Spanish/English voices, you may need to install them via Windows Settings > Time & Language > Speech.
 
 ---
 
-## Atualizacao
+## Update
 
 ```bash
 cd VoxControl
@@ -246,15 +313,15 @@ pip install -r requirements.txt --upgrade
 
 ---
 
-## Desinstalacao
+## Uninstall
 
 ```bash
-# Remove o ambiente virtual
+# Remove the virtual environment
 rmdir /s /q .venv
 
-# Remove o diretorio do projeto
+# Remove the project directory
 cd ..
 rmdir /s /q VoxControl
 ```
 
-Os modelos Whisper ficam em `%USERPROFILE%\.cache\huggingface\` e podem ser removidos manualmente se desejado.
+Whisper models are stored in `%USERPROFILE%\.cache\huggingface\` and can be manually removed if desired.

@@ -1,146 +1,164 @@
 # VoxControl
 
-**Open source voice control for Windows. Currently supports Portuguese, designed for multi-language expansion.**
+**Open source voice control for Windows. Supports Portuguese, Spanish, and English.**
 
-Offline-first | AI-powered (Claude / OpenAI) | Mobile remote control | 80+ actions
+Offline-first | AI-powered (Claude / OpenAI) | Mobile remote control | 80+ actions | 3 languages
 
 ---
 
 ## What is VoxControl?
 
-VoxControl lets you control your Windows PC entirely by voice. It currently supports Portuguese (Brazilian and European) with an architecture designed for easy multi-language expansion.
+VoxControl lets you control your Windows PC entirely by voice. It supports **Portuguese**, **Spanish**, and **English**, with an architecture designed for easy expansion to additional languages.
 
 It uses offline speech-to-text via Whisper and optionally interprets natural language through AI APIs (Claude or OpenAI) for advanced comprehension. It also works as a wireless remote: your smartphone on the same Wi-Fi network can send voice or text commands to the PC.
 
 ### Why does this project exist?
 
-There was no complete, ready-to-use open source solution for voice control of Windows in Portuguese. The individual components existed (Whisper, pyautogui, AI APIs), but nobody had integrated them into a functional, extensible system. VoxControl fills that gap and is built to support additional languages over time.
+There was no complete, ready-to-use open source solution for voice control of Windows in Portuguese. The individual components existed (Whisper, pyautogui, AI APIs), but nobody had integrated them into a functional, extensible system. VoxControl fills that gap and now supports Spanish and English as well.
 
 ---
 
-## Funcionalidades
+## Supported Languages
 
-| Categoria | O que faz | Exemplos de comandos |
-|-----------|-----------|----------------------|
-| **Sistema** | Abre/fecha apps, volume, brilho, screenshots, lock, shutdown | "abrir calculadora", "tirar print", "aumentar volume" |
-| **Navegador** | Chrome, Edge, Firefox: abas, pesquisa, scroll, zoom, favoritos | "pesquisar no Google noticias de hoje", "nova aba", "fechar aba" |
-| **WhatsApp** | Abre chats, envia mensagens, pesquisa, anexos, audio | "enviar mensagem para Joao: oi tudo bem?", "abrir chat com Maria" |
-| **Word** | Formatacao, tabelas, ortografia, impressao, localizar/substituir | "negrito", "inserir tabela 3 por 4", "verificar ortografia" |
-| **Excel** | Celulas, formulas, graficos, filtros, tabelas dinamicas | "autoSoma", "ir para celula B5", "criar grafico de barras" |
-| **PowerPoint** | Slides, apresentacao, imagens, temas | "novo slide", "iniciar apresentacao", "slide anterior" |
-| **Arquivos** | Explorador, pastas, renomear, pesquisa, comprimir | "abrir downloads", "criar pasta projetos", "pesquisar relatorio" |
-| **Midia** | Play/pause, Spotify, YouTube, faixas | "pausar musica", "proxima faixa", "abrir Spotify com jazz" |
-| **Teclado/Mouse** | Digitar, atalhos, cliques, scroll | "copiar", "colar", "desfazer", "digitar ola mundo" |
-| **Celular** | Controle remoto via Wi-Fi, interface web com microfone | Todos os comandos acima, do celular |
+| Language | Code | Wake Word | Offline Rules | AI (Claude/OpenAI) |
+|----------|------|-----------|---------------|---------------------|
+| **Portugues** (BR/PT) | `pt-BR`, `pt` | "computador" | ~35 commands | Full NLP |
+| **Espanol** (ES/MX) | `es-ES`, `es` | "computadora" | ~35 commands | Full NLP |
+| **English** (US/GB) | `en-US`, `en` | "computer" | ~35 commands | Full NLP |
+
+Switch language via CLI, `.env`, or `settings.yaml`:
+```bash
+python -m src.main --lang es       # Spanish
+python -m src.main --lang en       # English
+python -m src.main --lang pt       # Portuguese (default)
+```
 
 ---
 
-## Instalacao rapida
+## Features
 
-### Requisitos
+| Category | Actions | Command examples |
+|----------|---------|------------------|
+| **System** | Open/close apps, volume, brightness, screenshots, lock, shutdown | "open calculator", "take screenshot", "volume up" |
+| **Browser** | Chrome, Edge, Firefox: tabs, search, scroll, zoom, bookmarks | "search Google for today's news", "new tab", "close tab" |
+| **WhatsApp** | Open chats, send messages, search, attachments, audio | "send message to John: hello!", "open chat with Maria" |
+| **Word** | Formatting, tables, spell check, print, find/replace | "bold", "insert table 3 by 4", "spell check" |
+| **Excel** | Cells, formulas, charts, filters, pivot tables | "auto sum", "go to cell B5", "create bar chart" |
+| **PowerPoint** | Slides, slideshow, images, themes | "new slide", "start slideshow", "previous slide" |
+| **Files** | Explorer, folders, rename, search, compress | "open downloads", "create folder projects", "search report" |
+| **Media** | Play/pause, Spotify, YouTube, tracks | "pause music", "next track", "open Spotify with jazz" |
+| **Keyboard/Mouse** | Type, shortcuts, clicks, scroll | "copy", "paste", "undo", "type hello world" |
+| **Mobile** | Remote control via Wi-Fi, web interface with microphone | All commands above, from your phone |
 
-- Windows 10 ou 11
-- Python 3.10 ou superior
-- Microfone (interno ou externo)
-- Conexao com internet para primeiro download do modelo Whisper (~500MB para `small`)
-- (Opcional) Microsoft Office para controle avancado via COM API
-- (Opcional) Chave de API Claude ou OpenAI para compreensao por linguagem natural
+---
 
-### Passo a passo
+## Quick Install
+
+### Requirements
+
+- Windows 10 or 11
+- Python 3.10 or higher
+- Microphone (built-in or external)
+- Internet connection for first download of Whisper model (~500MB for `small`)
+- (Optional) Microsoft Office for advanced control via COM API
+- (Optional) Claude or OpenAI API key for natural language comprehension
+
+### Step by step
 
 ```bash
-# 1. Clone o repositorio
+# 1. Clone the repository
 git clone https://github.com/atiweb/VoxControl.git
 cd VoxControl
 
-# 2. Crie e ative ambiente virtual
+# 2. Create and activate virtual environment
 python -m venv .venv
 .venv\Scripts\activate
 
-# 3. Instale as dependencias
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure (opcional, para IA avancada)
+# 4. Configure (optional, for advanced AI)
 copy .env.example .env
-# Edite .env e adicione ANTHROPIC_API_KEY ou OPENAI_API_KEY
+# Edit .env: set APP_LANGUAGE and add ANTHROPIC_API_KEY or OPENAI_API_KEY
 
-# 5. Verifique a instalacao
+# 5. Verify installation
 python -m src.main --setup
 
-# 6. Execute
+# 6. Run
 python -m src.main
 ```
 
-> Guia completo em [docs/instalacao.md](docs/instalacao.md)
+> Complete guide at [docs/instalacao.md](docs/instalacao.md)
 
 ---
 
-## Modos de uso
+## Usage Modes
 
-| Modo | Comando | Descricao |
-|------|---------|-----------|
-| **Wake Word** | `python -m src.main` | Diga "computador" para ativar, depois o comando |
-| **Push-to-Talk** | `python -m src.main --ptt` | Segure F12 enquanto fala |
-| **Texto** | `python -m src.main --text` | Digita comandos (para testes) |
-| **Verificacao** | `python -m src.main --setup` | Verifica se tudo esta instalado |
+| Mode | Command | Description |
+|------|---------|-------------|
+| **Wake Word** | `python -m src.main` | Say "computador" / "computadora" / "computer" to activate |
+| **Push-to-Talk** | `python -m src.main --ptt` | Hold F12 while speaking |
+| **Text** | `python -m src.main --text` | Type commands (for testing) |
+| **Setup** | `python -m src.main --setup` | Verify installation |
 
-### Flags adicionais
+### Flags
 
-| Flag | Efeito |
+| Flag | Effect |
 |------|--------|
-| `--no-remote` | Desabilita servidor para celular |
-| `--no-voice` | Desabilita resposta por voz (TTS) |
+| `--lang XX` | Set language: `pt`, `es`, `en` (overrides config) |
+| `--no-remote` | Disable mobile server |
+| `--no-voice` | Disable voice responses (TTS) |
 
 ---
 
-## Controle pelo celular
+## Mobile Remote Control
 
-Ao iniciar, o sistema exibe um **QR Code** no terminal com o endereco de acesso:
+On startup, the system displays a **QR Code** in the terminal with the access URL:
 
 ```
-  CONTROLE REMOTO DISPONIVEL
-  Conecte pelo celular: http://192.168.1.100:8765
+  REMOTE CONTROL AVAILABLE
+  Connect from your phone: http://192.168.1.100:8765
 ```
 
-1. PC e celular na **mesma rede Wi-Fi**
-2. Abra o link no browser do celular (ou escaneie o QR)
-3. Segure o botao de microfone para falar, ou digite no campo de texto
+1. PC and phone on the **same Wi-Fi network**
+2. Open the link in your phone's browser (or scan the QR code)
+3. Hold the microphone button to speak, or type in the text field
 
-A interface mobile inclui botoes rapidos para acoes comuns (Chrome, WhatsApp, print, volume, etc.).
+The mobile interface adapts its language automatically based on the server's configured language — quick buttons, status messages, and speech recognition all match.
 
-> Detalhes em [docs/controle-remoto.md](docs/controle-remoto.md)
-
----
-
-## Backends de IA
-
-O sistema tem 3 niveis de interpretacao de comandos:
-
-| Backend | Precisao | Custo | Requisitos |
-|---------|----------|-------|------------|
-| **Claude** (recomendado) | Excelente | ~$0.001/comando | ANTHROPIC_API_KEY |
-| **OpenAI** | Muito boa | ~$0.001/comando | OPENAI_API_KEY |
-| **Offline** | Basica (40 regras) | Gratuito | Nenhum |
-
-**Com IA** (Claude/OpenAI): entende linguagem natural completa. Exemplo: "manda mensagem pro Joao no WhatsApp dizendo que vou me atrasar" funciona diretamente.
-
-**Sem IA** (offline): reconhece comandos diretos como "abrir chrome", "copiar", "nova aba". Funciona sem internet apos o modelo Whisper estar baixado.
-
-O fallback e automatico: se Claude falhar, tenta OpenAI; se ambos falharem, usa offline.
+> Details at [docs/controle-remoto.md](docs/controle-remoto.md)
 
 ---
 
-## Modelos Whisper (STT)
+## AI Backends
 
-| Modelo | RAM | Velocidade | Precisao PT | Quando usar |
-|--------|-----|------------|-------------|-------------|
-| `tiny` | ~1GB | Muito rapida | Boa | Maquinas lentas, teste rapido |
-| `base` | ~1GB | Rapida | Boa+ | Uso leve |
-| **`small`** | ~2GB | Rapida | **Muito boa** | **Recomendado para a maioria** |
-| `medium` | ~5GB | Media | Excelente | Hardware bom, max precisao |
-| `large-v3` | ~10GB | Lenta | Excelente+ | GPU dedicada, max qualidade |
+The system has 3 levels of command interpretation:
 
-Configure em `config/settings.yaml` ou `.env`:
+| Backend | Accuracy | Cost | Requirements |
+|---------|----------|------|-------------|
+| **Claude** (recommended) | Excellent | ~$0.001/command | ANTHROPIC_API_KEY |
+| **OpenAI** | Very good | ~$0.001/command | OPENAI_API_KEY |
+| **Offline** | Basic (~35 rules/lang) | Free | None |
+
+**With AI** (Claude/OpenAI): understands full natural language in pt/es/en. Example: "send a message to John on WhatsApp saying I'll be late" works directly.
+
+**Without AI** (offline): recognizes direct commands like "open chrome", "copy", "new tab". Works without internet after the Whisper model is downloaded.
+
+Fallback is automatic: if Claude fails, tries OpenAI; if both fail, uses offline.
+
+---
+
+## Whisper Models (STT)
+
+| Model | RAM | Speed | Accuracy | When to use |
+|-------|-----|-------|----------|-------------|
+| `tiny` | ~1GB | Very fast | Good | Slow hardware, quick test |
+| `base` | ~1GB | Fast | Good+ | Light usage |
+| **`small`** | ~2GB | Fast | **Very good** | **Recommended for most** |
+| `medium` | ~5GB | Medium | Excellent | Good hardware, max accuracy |
+| `large-v3` | ~10GB | Slow | Excellent+ | Dedicated GPU, max quality |
+
+Configure in `config/settings.yaml` or `.env`:
 ```yaml
 stt:
   whisper:
@@ -149,98 +167,100 @@ stt:
 
 ---
 
-## Exemplos de comandos
+## Command Examples
 
-### Linguagem natural (com Claude/OpenAI)
+### Portuguese (with AI)
 ```
 "Pesquisa no YouTube tutoriais de Python"
 "Manda mensagem no WhatsApp para a Ana dizendo que vou me atrasar"
 "Abre o Excel e cria uma nova planilha"
 "Faz um print da tela e salva na area de trabalho"
-"Fecha todas as janelas e mostra a area de trabalho"
-"Aumenta o volume para 70 por cento"
 ```
 
-### Comandos diretos (funciona offline)
+### Spanish (with AI)
 ```
-"abrir chrome"              -> abre o Chrome
-"pesquisar clima amanha"    -> Google: "clima amanha"
-"tirar print"               -> screenshot na area de trabalho
-"aumentar volume"           -> sobe o volume
-"salvar"                    -> Ctrl+S
-"desfazer"                  -> Ctrl+Z
-"copiar"                    -> Ctrl+C
-"minimizar"                 -> minimiza janela atual
-"nova aba"                  -> Ctrl+T (no navegador)
-"rolar para baixo"          -> scroll down
-"bloquear tela"             -> Win+L
+"Busca en YouTube tutoriales de Python"
+"Abre Chrome y busca noticias de hoy"
+"Captura de pantalla del escritorio"
+"Subir volumen al maximo"
 ```
 
-> Referencia completa: [docs/comandos.md](docs/comandos.md)
+### English (with AI)
+```
+"Search YouTube for Python tutorials"
+"Open Chrome and search for today's news"
+"Take a screenshot of the desktop"
+"Volume up to maximum"
+```
+
+### Offline commands (all languages)
+```
+PT: "abrir chrome", "copiar", "nova aba", "aumentar volume"
+ES: "abrir chrome", "copiar", "nueva pestana", "subir volumen"
+EN: "open chrome", "copy", "new tab", "volume up"
+```
+
+> Full reference: [docs/comandos.md](docs/comandos.md)
 
 ---
 
-## Comandos personalizados
+## Custom Commands
 
-Adicione seus atalhos em `config/custom_commands.yaml`:
+Add your own voice shortcuts in `config/custom_commands.yaml`:
 
 ```yaml
 custom_commands:
-  - trigger: "abrir meu email"
+  - trigger: "open my email"
     action: "browser.open_url"
     params:
       url: "https://mail.google.com"
 
-  - trigger: "modo foco"
+  - trigger: "focus mode"
     action: "system.do_not_disturb"
     params:
       enabled: true
-
-  - trigger: "mensagem para o chefe"
-    action: "whatsapp.open_chat"
-    params:
-      contact: "Carlos"
 ```
 
 ---
 
-## Estrutura do projeto
+## Project Structure
 
 ```
 VoxControl/
 |-- config/
-|   |-- settings.yaml          # configuracoes gerais
-|   |-- custom_commands.yaml   # comandos personalizados
-|-- docs/                      # documentacao completa
+|   |-- settings.yaml          # general settings
+|   |-- custom_commands.yaml   # custom voice shortcuts
+|-- docs/                      # full documentation
 |   |-- instalacao.md
 |   |-- configuracao.md
 |   |-- comandos.md
 |   |-- controle-remoto.md
 |   |-- arquitetura.md
 |-- src/
-|   |-- main.py                # ponto de entrada CLI
-|   |-- core/engine.py         # orquestrador principal
+|   |-- main.py                # CLI entry point
+|   |-- i18n.py                # internationalization (pt/es/en)
+|   |-- core/engine.py         # main orchestrator
 |   |-- audio/
-|   |   |-- listener.py        # captura de microfone + wake word
+|   |   |-- listener.py        # mic capture + wake word
 |   |   |-- transcriber.py     # STT (Whisper / Vosk)
 |   |-- ai/
 |   |   |-- intent_parser.py   # Claude / OpenAI / offline
-|   |   |-- prompts.py         # prompt do sistema com 80+ acoes
+|   |   |-- prompts.py         # multi-language system prompt, 80+ actions
 |   |-- actions/
-|   |   |-- dispatcher.py      # roteador de acoes
-|   |   |-- system_control.py  # Windows (apps, volume, tela)
+|   |   |-- dispatcher.py      # action router
+|   |   |-- system_control.py  # Windows (apps, volume, screen)
 |   |   |-- browser_control.py # Chrome / Edge / Firefox
 |   |   |-- whatsapp_control.py# WhatsApp Web
 |   |   |-- office_control.py  # Word / Excel / PowerPoint
-|   |   |-- file_control.py    # arquivos e pastas
+|   |   |-- file_control.py    # files and folders
 |   |   |-- media_control.py   # Spotify / YouTube / player
-|   |   |-- keyboard_control.py# teclado e mouse
-|   |-- voice/speaker.py       # TTS portugues (pyttsx3)
+|   |   |-- keyboard_control.py# keyboard and mouse
+|   |-- voice/speaker.py       # TTS with auto language voice selection
 |   |-- remote/
 |       |-- server.py          # FastAPI + WebSocket
-|       |-- static/index.html  # interface mobile
-|-- models/                    # modelos Vosk (opcional)
-|-- logs/                      # logs da aplicacao
+|       |-- static/index.html  # mobile interface (multi-language)
+|-- models/                    # Vosk models (optional)
+|-- logs/                      # application logs
 |-- requirements.txt
 |-- .env.example
 |-- .gitignore
@@ -248,56 +268,57 @@ VoxControl/
 
 ---
 
-## Estatisticas do codigo
+## Code Statistics
 
-| Metrica | Valor |
-|---------|-------|
-| Arquivos Python | 23 |
-| Linhas de codigo | ~2.700 |
-| Acoes suportadas | 80+ |
-| Regras offline | ~40 |
-| Dependencias | 40+ pacotes |
-
----
-
-## Documentacao completa
-
-| Documento | Conteudo |
-|-----------|----------|
-| [docs/instalacao.md](docs/instalacao.md) | Guia completo de instalacao, requisitos, troubleshooting |
-| [docs/configuracao.md](docs/configuracao.md) | Todas as opcoes de settings.yaml e .env |
-| [docs/comandos.md](docs/comandos.md) | Referencia de todas as 80+ acoes com parametros |
-| [docs/controle-remoto.md](docs/controle-remoto.md) | Configuracao do celular, HTTPS, WebSocket API |
-| [docs/arquitetura.md](docs/arquitetura.md) | Arquitetura do sistema, como contribuir, roadmap |
+| Metric | Value |
+|--------|-------|
+| Python files | 24 |
+| Lines of code | ~3,800 |
+| Supported actions | 80+ |
+| Offline rules | ~35 per language |
+| Languages | 3 (pt, es, en) |
+| Dependencies | 40+ packages |
 
 ---
 
-## Contribuindo
+## Full Documentation
 
-PRs sao bem-vindos! Areas prioritarias:
-
-- Mais comandos para apps especificos (Outlook, Teams, VS Code, Telegram)
-- Integracao com Telegram bot (alternativa ao servidor web para celular)
-- Melhorias no suporte a PT-PT (europeu)
-- Testes automatizados
-- Empacotamento como `.exe` via PyInstaller
-- Interface grafica (tray icon)
-- Plugin system para extensoes da comunidade
-
-### Como contribuir
-
-1. Fork o repositorio
-2. Crie uma branch: `git checkout -b minha-feature`
-3. Faca suas alteracoes
-4. Teste com `python -m src.main --text`
-5. Envie um PR
+| Document | Content |
+|----------|---------|
+| [docs/instalacao.md](docs/instalacao.md) | Installation guide, requirements, troubleshooting |
+| [docs/configuracao.md](docs/configuracao.md) | All settings.yaml and .env options |
+| [docs/comandos.md](docs/comandos.md) | Reference for all 80+ actions with parameters |
+| [docs/controle-remoto.md](docs/controle-remoto.md) | Mobile setup, HTTPS, WebSocket API |
+| [docs/arquitetura.md](docs/arquitetura.md) | System architecture, how to contribute, roadmap |
 
 ---
 
-## Licenca
+## Contributing
 
-MIT -- use livremente, inclusive em projetos comerciais.
+PRs are welcome! Priority areas:
+
+- More command handlers for specific apps (Outlook, Teams, VS Code, Telegram)
+- Telegram bot integration (alternative to web server for mobile)
+- Automated tests (pytest)
+- Packaging as `.exe` via PyInstaller
+- GUI (tray icon)
+- Plugin system for community extensions
+- Additional languages (French, German, Italian, etc.)
+
+### How to contribute
+
+1. Fork the repository
+2. Create a branch: `git checkout -b my-feature`
+3. Make your changes
+4. Test with `python -m src.main --text --lang en`
+5. Submit a PR
 
 ---
 
-*Desenvolvido para a comunidade lusofona. Se este projeto foi util, deixe uma estrela no GitHub!*
+## License
+
+MIT -- use freely, including in commercial projects.
+
+---
+
+*Built for the global community. If this project was useful, leave a star on GitHub!*

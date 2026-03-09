@@ -1,66 +1,78 @@
-# Referencia de Comandos
+# Command Reference
 
-Catalogo completo de todas as 80+ acoes suportadas pelo VoxControl.
-Cada acao pode ser ativada por voz em portugues (via IA) ou por correspondencia offline.
-
----
-
-## Como funciona
-
-1. Voce fala um comando em portugues
-2. O Whisper transcreve a fala para texto
-3. A IA (Claude/OpenAI) interpreta a intencao e mapeia para uma acao
-4. O dispatcher executa a acao no Windows
-
-Exemplo:
-```
-Voce diz: "pesquisa no Google quanto custa um iPhone"
-IA interpreta: browser.search {query: "quanto custa um iPhone", engine: "google"}
-Sistema executa: abre o Google com a pesquisa
-```
+Complete catalog of all 80+ actions supported by VoxControl.
+Each action can be activated by voice in Portuguese, Spanish, or English (via AI) or via offline keyword matching.
 
 ---
 
-## 1. Sistema (system.)
+## How It Works
 
-Controle do sistema operacional Windows.
+1. You speak a command in your configured language
+2. Whisper transcribes speech to text
+3. AI (Claude/OpenAI) interprets the intent and maps it to an action
+4. The dispatcher executes the action on Windows
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `system.open_app` | app: nome do aplicativo | Abre qualquer aplicativo instalado |
-| `system.close_app` | app: nome (ou null = janela atual) | Fecha aplicativo ou janela ativa |
-| `system.switch_window` | direction: "next" ou "prev" / app: nome | Alt+Tab ou foca em app especifico |
-| `system.minimize` | -- | Minimiza janela atual (Win+Down) |
-| `system.maximize` | -- | Maximiza janela atual (Win+Up) |
-| `system.restore` | -- | Restaura janela ao tamanho original |
-| `system.show_desktop` | -- | Mostra area de trabalho (Win+D) |
-| `system.lock_screen` | -- | Bloqueia a tela (Win+L) |
-| `system.shutdown` | -- | Desliga o PC em 30 segundos |
-| `system.restart` | -- | Reinicia o PC em 30 segundos |
-| `system.sleep` | -- | Modo de suspensao |
-| `system.screenshot` | region: "full" ou "window", save_to_desktop: bool | Captura de tela |
-| `system.volume_up` | amount: 1-10 | Aumenta volume |
-| `system.volume_down` | amount: 1-10 | Diminui volume |
-| `system.volume_mute` | -- | Silencia/dessilencia |
-| `system.volume_set` | level: 0-100 | Define volume absoluto |
-| `system.brightness_up` | -- | Aumenta brilho da tela |
-| `system.brightness_down` | -- | Diminui brilho da tela |
-| `system.do_not_disturb` | enabled: true/false | Modo nao perturbe |
-| `system.task_manager` | -- | Abre Gerenciador de Tarefas |
-| `system.settings` | page: string (opcional) | Abre Configuracoes do Windows |
-| `system.clipboard_history` | -- | Historico da area de transferencia (Win+V) |
-| `system.virtual_desktop_new` | -- | Cria nova area de trabalho virtual |
-| `system.virtual_desktop_switch` | index: numero | Alterna entre areas virtuais |
+Example (English):
+```
+You say: "search Google for how much does an iPhone cost"
+AI interprets: browser.search {query: "how much does an iPhone cost", engine: "google"}
+System executes: opens Google with the search
+```
 
-### Aplicativos reconhecidos
+Example (Portuguese):
+```
+You say: "pesquisa no Google quanto custa um iPhone"
+AI interprets: browser.search {query: "quanto custa um iPhone", engine: "google"}
+```
 
-O `system.open_app` reconhece estes nomes:
+Example (Spanish):
+```
+You say: "buscar en Google cuanto cuesta un iPhone"
+AI interprets: browser.search {query: "cuanto cuesta un iPhone", engine: "google"}
+```
 
-| Nome falado | Executavel |
-|-------------|-----------|
-| calculadora, calc | calc.exe |
-| notepad, bloco de notas | notepad.exe |
-| explorer | explorer.exe |
+---
+
+## 1. System (system.)
+
+Windows OS control.
+
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `system.open_app` | app: application name | Opens any installed application |
+| `system.close_app` | app: name (or null = current window) | Closes application or active window |
+| `system.switch_window` | direction: "next" or "prev" / app: name | Alt+Tab or focuses specific app |
+| `system.minimize` | -- | Minimizes current window (Win+Down) |
+| `system.maximize` | -- | Maximizes current window (Win+Up) |
+| `system.restore` | -- | Restores window to original size |
+| `system.show_desktop` | -- | Shows desktop (Win+D) |
+| `system.lock_screen` | -- | Locks screen (Win+L) |
+| `system.shutdown` | -- | Shuts down PC in 30 seconds |
+| `system.restart` | -- | Restarts PC in 30 seconds |
+| `system.sleep` | -- | Sleep mode |
+| `system.screenshot` | region: "full" or "window", save_to_desktop: bool | Screen capture |
+| `system.volume_up` | amount: 1-10 | Increases volume |
+| `system.volume_down` | amount: 1-10 | Decreases volume |
+| `system.volume_mute` | -- | Mutes/unmutes |
+| `system.volume_set` | level: 0-100 | Sets absolute volume |
+| `system.brightness_up` | -- | Increases brightness |
+| `system.brightness_down` | -- | Decreases brightness |
+| `system.do_not_disturb` | enabled: true/false | Do not disturb mode |
+| `system.task_manager` | -- | Opens Task Manager |
+| `system.settings` | page: string (optional) | Opens Windows Settings |
+| `system.clipboard_history` | -- | Clipboard history (Win+V) |
+| `system.virtual_desktop_new` | -- | Creates new virtual desktop |
+| `system.virtual_desktop_switch` | index: number | Switches virtual desktops |
+
+### Recognized Applications
+
+The `system.open_app` action recognizes these names in any language:
+
+| Name (PT / ES / EN) | Executable |
+|----------------------|-----------|
+| calculadora / calculadora / calculator | calc.exe |
+| bloco de notas / bloc de notas / notepad, text editor | notepad.exe |
+| explorador / explorador / file explorer | explorer.exe |
 | cmd | cmd.exe |
 | powershell | powershell.exe |
 | word | winword.exe |
@@ -76,293 +88,333 @@ O `system.open_app` reconhece estes nomes:
 | discord | discord.exe |
 | vscode, visual studio code | code.exe |
 | paint | mspaint.exe |
+| configuracoes / configuracion / settings | ms-settings: |
+| gerenciador de tarefas / administrador de tareas / task manager | taskmgr.exe |
+| ferramenta de recorte / recortes / snipping tool | snippingtool.exe |
 
-### Exemplos de uso
+### Examples by Language
 
+**Portuguese:**
 ```
 "abrir calculadora"
 "fechar janela"
-"alternar janela" ou "trocar janela"
 "minimizar"
 "tirar print da tela"
 "aumentar volume"
-"silenciar"
 "bloquear tela"
-"mostrar area de trabalho"
-"abrir configuracoes"
-"desligar computador" (pede confirmacao)
+```
+
+**Spanish:**
+```
+"abrir calculadora"
+"cerrar ventana"
+"minimizar"
+"captura de pantalla"
+"subir volumen"
+"bloquear pantalla"
+```
+
+**English:**
+```
+"open calculator"
+"close window"
+"minimize"
+"take screenshot"
+"volume up"
+"lock screen"
 ```
 
 ---
 
-## 2. Navegador (browser.)
+## 2. Browser (browser.)
 
-Controle de Chrome, Edge e Firefox.
+Chrome, Edge and Firefox control.
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `browser.open` | browser: "chrome", "edge", "firefox" | Abre navegador |
-| `browser.open_url` | url: endereco web | Navega para URL |
-| `browser.search` | query: texto, engine: "google", "bing", "youtube" | Pesquisa web |
-| `browser.new_tab` | -- | Nova aba (Ctrl+T) |
-| `browser.close_tab` | -- | Fecha aba (Ctrl+W) |
-| `browser.reopen_tab` | -- | Reabre aba fechada (Ctrl+Shift+T) |
-| `browser.next_tab` | -- | Proxima aba (Ctrl+Tab) |
-| `browser.prev_tab` | -- | Aba anterior (Ctrl+Shift+Tab) |
-| `browser.go_back` | -- | Voltar (Alt+Left) |
-| `browser.go_forward` | -- | Avancar (Alt+Right) |
-| `browser.refresh` | -- | Recarregar (F5) |
-| `browser.scroll_up` | amount: int | Rolar para cima |
-| `browser.scroll_down` | amount: int | Rolar para baixo |
-| `browser.scroll_top` | -- | Ir ao topo (Ctrl+Home) |
-| `browser.scroll_bottom` | -- | Ir ao final (Ctrl+End) |
-| `browser.zoom_in` | -- | Aumentar zoom (Ctrl++) |
-| `browser.zoom_out` | -- | Diminuir zoom (Ctrl+-) |
-| `browser.zoom_reset` | -- | Resetar zoom (Ctrl+0) |
-| `browser.bookmark` | -- | Adicionar favorito (Ctrl+D) |
-| `browser.find` | text: texto para buscar | Buscar na pagina (Ctrl+F) |
-| `browser.reading_mode` | -- | Modo leitura (F9) |
-| `browser.download` | -- | Abrir downloads (Ctrl+J) |
-| `browser.fullscreen` | -- | Tela cheia (F11) |
-| `browser.history` | -- | Historico (Ctrl+H) |
-| `browser.incognito` | url: endereco (opcional) | Janela anonima (Ctrl+Shift+N) |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `browser.open` | browser: "chrome", "edge", "firefox" | Opens browser |
+| `browser.open_url` | url: web address | Navigates to URL |
+| `browser.search` | query: text, engine: "google", "bing", "youtube" | Web search |
+| `browser.new_tab` | -- | New tab (Ctrl+T) |
+| `browser.close_tab` | -- | Close tab (Ctrl+W) |
+| `browser.reopen_tab` | -- | Reopen closed tab (Ctrl+Shift+T) |
+| `browser.next_tab` | -- | Next tab (Ctrl+Tab) |
+| `browser.prev_tab` | -- | Previous tab (Ctrl+Shift+Tab) |
+| `browser.go_back` | -- | Go back (Alt+Left) |
+| `browser.go_forward` | -- | Go forward (Alt+Right) |
+| `browser.refresh` | -- | Reload (F5) |
+| `browser.scroll_up` | amount: int | Scroll up |
+| `browser.scroll_down` | amount: int | Scroll down |
+| `browser.scroll_top` | -- | Go to top (Ctrl+Home) |
+| `browser.scroll_bottom` | -- | Go to bottom (Ctrl+End) |
+| `browser.zoom_in` | -- | Zoom in (Ctrl++) |
+| `browser.zoom_out` | -- | Zoom out (Ctrl+-) |
+| `browser.zoom_reset` | -- | Reset zoom (Ctrl+0) |
+| `browser.bookmark` | -- | Add bookmark (Ctrl+D) |
+| `browser.find` | text: search text | Find on page (Ctrl+F) |
+| `browser.reading_mode` | -- | Reading mode (F9) |
+| `browser.download` | -- | Open downloads (Ctrl+J) |
+| `browser.fullscreen` | -- | Fullscreen (F11) |
+| `browser.history` | -- | History (Ctrl+H) |
+| `browser.incognito` | url: address (optional) | Incognito window (Ctrl+Shift+N) |
 
-### Exemplos
+### Examples
 
+**Portuguese:**
 ```
 "pesquisar no Google previsao do tempo"
-"pesquisar no YouTube tutoriais de Python"
 "abrir o site da Netflix"
 "nova aba"
 "fechar aba"
 "voltar"
-"rolar para baixo"
 "tela cheia"
-"buscar 'preco' nesta pagina"
-"abrir janela anonima"
+```
+
+**Spanish:**
+```
+"buscar en Google el clima"
+"abrir la pagina de Netflix"
+"nueva pestana"
+"cerrar pestana"
+"volver"
+"pantalla completa"
+```
+
+**English:**
+```
+"search Google for weather forecast"
+"open Netflix website"
+"new tab"
+"close tab"
+"go back"
+"fullscreen"
 ```
 
 ---
 
 ## 3. WhatsApp (whatsapp.)
 
-Controle do WhatsApp Web (requer WhatsApp Web aberto no navegador).
+WhatsApp Web control (requires WhatsApp Web open in browser).
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `whatsapp.open` | -- | Abre web.whatsapp.com |
-| `whatsapp.open_chat` | contact: nome do contato | Abre conversa com contato |
-| `whatsapp.send_message` | contact: nome, message: texto | Envia mensagem |
-| `whatsapp.new_group` | -- | Inicia criacao de novo grupo |
-| `whatsapp.search` | query: texto | Pesquisa contatos/mensagens |
-| `whatsapp.attach_file` | -- | Abre menu de anexo |
-| `whatsapp.voice_note` | -- | Inicia gravacao de audio |
-| `whatsapp.read_last` | contact: nome (opcional) | Abre ultima mensagem |
-| `whatsapp.mark_read` | -- | Marca conversa como lida |
-| `whatsapp.archive_chat` | contact: nome | Arquiva conversa |
-| `whatsapp.mute_chat` | contact: nome, duration: duracao | Silencia conversa |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `whatsapp.open` | -- | Opens web.whatsapp.com |
+| `whatsapp.open_chat` | contact: contact name | Opens conversation with contact |
+| `whatsapp.send_message` | contact: name, message: text | Sends message |
+| `whatsapp.new_group` | -- | Starts creating a new group |
+| `whatsapp.search` | query: text | Searches contacts/messages |
+| `whatsapp.attach_file` | -- | Opens attachment menu |
+| `whatsapp.voice_note` | -- | Starts voice recording |
+| `whatsapp.read_last` | contact: name (optional) | Opens last message |
+| `whatsapp.mark_read` | -- | Marks conversation as read |
+| `whatsapp.archive_chat` | contact: name | Archives conversation |
+| `whatsapp.mute_chat` | contact: name, duration: duration | Mutes conversation |
 
-### Exemplos
+### Examples
 
+**Portuguese:**
 ```
 "abrir WhatsApp"
 "abrir chat com a Maria"
 "enviar mensagem para o Joao: oi, tudo bem?"
-"pesquisar Carlos no WhatsApp"
-"mandar audio" (inicia gravacao de voz)
-"arquivar conversa com Pedro"
+```
+
+**Spanish:**
+```
+"abrir WhatsApp"
+"abrir chat con Maria"
+"enviar mensaje a Juan: hola, como estas?"
+```
+
+**English:**
+```
+"open WhatsApp"
+"open chat with Maria"
+"send message to John: hi, how are you?"
 ```
 
 ---
 
 ## 4. Microsoft Word (office.word.)
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `office.word.open` | file: caminho (opcional) | Abre Word ou documento |
-| `office.word.new` | -- | Novo documento |
-| `office.word.save` | -- | Salvar (Ctrl+S) |
-| `office.word.save_as` | filename: nome (opcional) | Salvar Como (Ctrl+Shift+S) |
-| `office.word.close` | -- | Fechar documento (Ctrl+W) |
-| `office.word.print` | -- | Imprimir (Ctrl+P) |
-| `office.word.bold` | -- | Negrito (Ctrl+B) |
-| `office.word.italic` | -- | Italico (Ctrl+I) |
-| `office.word.underline` | -- | Sublinhado (Ctrl+U) |
-| `office.word.align` | alignment: "left", "center", "right", "justify" | Alinhamento |
-| `office.word.font_size` | size: numero | Tamanho da fonte |
-| `office.word.heading` | level: 1, 2 ou 3 | Titulo (Ctrl+Alt+1/2/3) |
-| `office.word.bullet_list` | -- | Lista com marcadores |
-| `office.word.numbered_list` | -- | Lista numerada |
-| `office.word.insert_table` | rows: numero, cols: numero | Insere tabela |
-| `office.word.insert_image` | -- | Abre dialogo de insercao de imagem |
-| `office.word.find_replace` | find: texto, replace: texto | Localizar e substituir |
-| `office.word.spell_check` | -- | Verificacao ortografica (F7) |
-| `office.word.word_count` | -- | Contagem de palavras |
-| `office.word.new_page` | -- | Insere quebra de pagina (Ctrl+Enter) |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `office.word.open` | file: path (optional) | Opens Word or document |
+| `office.word.new` | -- | New document |
+| `office.word.save` | -- | Save (Ctrl+S) |
+| `office.word.save_as` | filename: name (optional) | Save As (Ctrl+Shift+S) |
+| `office.word.close` | -- | Close document (Ctrl+W) |
+| `office.word.print` | -- | Print (Ctrl+P) |
+| `office.word.bold` | -- | Bold (Ctrl+B) |
+| `office.word.italic` | -- | Italic (Ctrl+I) |
+| `office.word.underline` | -- | Underline (Ctrl+U) |
+| `office.word.align` | alignment: "left", "center", "right", "justify" | Alignment |
+| `office.word.font_size` | size: number | Font size |
+| `office.word.heading` | level: 1, 2, or 3 | Heading (Ctrl+Alt+1/2/3) |
+| `office.word.bullet_list` | -- | Bullet list |
+| `office.word.numbered_list` | -- | Numbered list |
+| `office.word.insert_table` | rows: number, cols: number | Insert table |
+| `office.word.insert_image` | -- | Opens image insertion dialog |
+| `office.word.find_replace` | find: text, replace: text | Find and replace |
+| `office.word.spell_check` | -- | Spell check (F7) |
+| `office.word.word_count` | -- | Word count |
+| `office.word.new_page` | -- | Insert page break (Ctrl+Enter) |
 
-### Exemplos
+### Examples
 
 ```
-"abrir Word"
-"novo documento"
-"negrito"
-"centralizar texto"
-"tamanho da fonte 14"
-"titulo nivel 2"
-"inserir tabela 3 por 4"
-"verificar ortografia"
-"salvar documento"
-"nova pagina"
+PT: "abrir Word" / "negrito" / "centralizar texto" / "inserir tabela 3 por 4"
+ES: "abrir Word" / "negrita" / "centrar texto" / "insertar tabla 3 por 4"
+EN: "open Word" / "bold" / "center text" / "insert 3 by 4 table"
 ```
 
 ---
 
 ## 5. Microsoft Excel (office.excel.)
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `office.excel.open` | file: caminho (opcional) | Abre Excel ou arquivo |
-| `office.excel.new` | -- | Nova planilha |
-| `office.excel.save` | -- | Salvar |
-| `office.excel.goto_cell` | cell: referencia (ex: "B5") | Navega para celula |
-| `office.excel.insert_formula` | formula: string | Insere formula |
-| `office.excel.auto_sum` | -- | AutoSoma (Alt+=) |
-| `office.excel.create_chart` | type: "bar", "line", "pie", "column" | Cria grafico |
-| `office.excel.filter` | -- | Alterna filtro (Ctrl+Shift+L) |
-| `office.excel.sort` | order: "asc" ou "desc" | Ordena dados |
-| `office.excel.freeze_panes` | -- | Congela paineis |
-| `office.excel.new_sheet` | name: nome (opcional) | Nova aba/planilha |
-| `office.excel.delete_sheet` | -- | Exclui aba atual |
-| `office.excel.find_replace` | find: texto, replace: texto | Localizar e substituir |
-| `office.excel.pivot_table` | -- | Insere tabela dinamica |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `office.excel.open` | file: path (optional) | Opens Excel or file |
+| `office.excel.new` | -- | New spreadsheet |
+| `office.excel.save` | -- | Save |
+| `office.excel.goto_cell` | cell: reference (e.g., "B5") | Navigate to cell |
+| `office.excel.insert_formula` | formula: string | Insert formula |
+| `office.excel.auto_sum` | -- | AutoSum (Alt+=) |
+| `office.excel.create_chart` | type: "bar", "line", "pie", "column" | Create chart |
+| `office.excel.filter` | -- | Toggle filter (Ctrl+Shift+L) |
+| `office.excel.sort` | order: "asc" or "desc" | Sort data |
+| `office.excel.freeze_panes` | -- | Freeze panes |
+| `office.excel.new_sheet` | name: name (optional) | New sheet |
+| `office.excel.delete_sheet` | -- | Delete current sheet |
+| `office.excel.find_replace` | find: text, replace: text | Find and replace |
+| `office.excel.pivot_table` | -- | Insert pivot table |
 
-### Exemplos
+### Examples
 
 ```
-"abrir Excel"
-"ir para celula B5"
-"autoSoma"
-"criar grafico de barras"
-"filtrar dados"
-"ordenar crescente"
-"congelar paineis"
-"nova planilha chamada Vendas"
-"tabela dinamica"
+PT: "abrir Excel" / "ir para celula B5" / "autoSoma" / "criar grafico de barras"
+ES: "abrir Excel" / "ir a celda B5" / "autosuma" / "crear grafico de barras"
+EN: "open Excel" / "go to cell B5" / "auto sum" / "create bar chart"
 ```
 
 ---
 
 ## 6. Microsoft PowerPoint (office.ppt.)
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `office.ppt.open` | file: caminho (opcional) | Abre PowerPoint ou arquivo |
-| `office.ppt.new` | -- | Nova apresentacao |
-| `office.ppt.save` | -- | Salvar |
-| `office.ppt.new_slide` | layout: tipo (opcional) | Adiciona slide (Ctrl+M) |
-| `office.ppt.delete_slide` | -- | Exclui slide atual |
-| `office.ppt.next_slide` | -- | Proximo slide (PageDown) |
-| `office.ppt.prev_slide` | -- | Slide anterior (PageUp) |
-| `office.ppt.start_slideshow` | -- | Inicia apresentacao (F5) |
-| `office.ppt.end_slideshow` | -- | Encerra apresentacao (Esc) |
-| `office.ppt.insert_image` | -- | Inserir imagem |
-| `office.ppt.duplicate_slide` | -- | Duplica slide (Ctrl+D) |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `office.ppt.open` | file: path (optional) | Opens PowerPoint or file |
+| `office.ppt.new` | -- | New presentation |
+| `office.ppt.save` | -- | Save |
+| `office.ppt.new_slide` | layout: type (optional) | Add slide (Ctrl+M) |
+| `office.ppt.delete_slide` | -- | Delete current slide |
+| `office.ppt.next_slide` | -- | Next slide (PageDown) |
+| `office.ppt.prev_slide` | -- | Previous slide (PageUp) |
+| `office.ppt.start_slideshow` | -- | Start slideshow (F5) |
+| `office.ppt.end_slideshow` | -- | End slideshow (Esc) |
+| `office.ppt.insert_image` | -- | Insert image |
+| `office.ppt.duplicate_slide` | -- | Duplicate slide (Ctrl+D) |
 
-### Exemplos
+### Examples
 
 ```
-"abrir PowerPoint"
-"novo slide"
-"iniciar apresentacao"
-"proximo slide"
-"slide anterior"
-"encerrar apresentacao"
-"duplicar slide"
+PT: "abrir PowerPoint" / "novo slide" / "iniciar apresentacao" / "proximo slide"
+ES: "abrir PowerPoint" / "nueva diapositiva" / "iniciar presentacion" / "siguiente"
+EN: "open PowerPoint" / "new slide" / "start slideshow" / "next slide"
 ```
 
 ---
 
-## 7. Arquivos e Pastas (files.)
+## 7. Files and Folders (files.)
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `files.open_explorer` | path: caminho (opcional) | Abre Explorador de Arquivos |
-| `files.open_folder` | path: caminho ou alias | Abre pasta especifica |
-| `files.open_file` | path ou name: nome do arquivo | Abre arquivo |
-| `files.new_folder` | name: nome, path: onde (opcional) | Cria pasta |
-| `files.rename` | name: novo nome | Renomeia arquivo/pasta selecionado (F2) |
-| `files.delete` | -- | Envia para lixeira (Delete) |
-| `files.copy` | -- | Copiar (Ctrl+C) |
-| `files.cut` | -- | Recortar (Ctrl+X) |
-| `files.paste` | -- | Colar (Ctrl+V) |
-| `files.search` | query: texto, path: onde (opcional) | Pesquisa arquivo |
-| `files.compress` | -- | Compactar em ZIP |
-| `files.extract` | -- | Extrair arquivo compactado |
-| `files.properties` | -- | Propriedades (Alt+Enter) |
-| `files.sort_by` | field: "name", "date", "size", "type" | Ordena arquivos |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `files.open_explorer` | path: path (optional) | Opens File Explorer |
+| `files.open_folder` | path: path or alias | Opens specific folder |
+| `files.open_file` | path or name: file name | Opens file |
+| `files.new_folder` | name: name, path: where (optional) | Creates folder |
+| `files.rename` | name: new name | Renames selected file/folder (F2) |
+| `files.delete` | -- | Sends to recycle bin (Delete) |
+| `files.copy` | -- | Copy (Ctrl+C) |
+| `files.cut` | -- | Cut (Ctrl+X) |
+| `files.paste` | -- | Paste (Ctrl+V) |
+| `files.search` | query: text, path: where (optional) | Search file |
+| `files.compress` | -- | Compress to ZIP |
+| `files.extract` | -- | Extract compressed file |
+| `files.properties` | -- | Properties (Alt+Enter) |
+| `files.sort_by` | field: "name", "date", "size", "type" | Sort files |
 
-### Aliases de pastas
+### Folder Aliases
 
-Voce pode usar nomes amigaveis ao inves de caminhos completos:
+You can use friendly names instead of full paths. Aliases are available in all languages:
 
-| Nome | Caminho real |
-|------|-------------|
-| documentos | %USERPROFILE%\Documents |
-| downloads | %USERPROFILE%\Downloads |
-| desktop, area de trabalho | %USERPROFILE%\Desktop |
-| imagens | %USERPROFILE%\Pictures |
-| musicas | %USERPROFILE%\Music |
-| videos | %USERPROFILE%\Videos |
-| disco c, raiz | C:\ |
+| Portuguese | Spanish | English | Path |
+|-----------|---------|---------|------|
+| documentos | documentos | documents | %USERPROFILE%\Documents |
+| downloads | descargas | downloads | %USERPROFILE%\Downloads |
+| desktop, area de trabalho | escritorio | desktop | %USERPROFILE%\Desktop |
+| imagens | imagenes | pictures | %USERPROFILE%\Pictures |
+| musicas | musica | music | %USERPROFILE%\Music |
+| videos | videos | videos | %USERPROFILE%\Videos |
+| disco c, raiz | disco c, raiz | c drive, root | C:\ |
 
-### Exemplos
+### Examples
 
+**Portuguese:**
 ```
 "abrir pasta downloads"
 "abrir meus documentos"
 "criar pasta chamada projetos"
-"pesquisar relatorio"
-"renomear para novo-nome"
-"ordenar por data"
+```
+
+**Spanish:**
+```
+"abrir carpeta descargas"
+"abrir mis documentos"
+"crear carpeta llamada proyectos"
+```
+
+**English:**
+```
+"open downloads folder"
+"open my documents"
+"create folder called projects"
 ```
 
 ---
 
-## 8. Midia (media.)
+## 8. Media (media.)
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `media.play_pause` | -- | Alterna play/pausa (tecla de midia) |
-| `media.next` | -- | Proxima faixa |
-| `media.previous` | -- | Faixa anterior |
-| `media.stop` | -- | Para reproducao |
-| `media.shuffle` | -- | Alterna modo aleatorio |
-| `media.repeat` | -- | Alterna modo repeticao |
-| `media.open_spotify` | query: busca (opcional) | Abre Spotify |
-| `media.open_youtube` | query: busca (opcional) | Abre YouTube |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `media.play_pause` | -- | Toggle play/pause (media key) |
+| `media.next` | -- | Next track |
+| `media.previous` | -- | Previous track |
+| `media.stop` | -- | Stop playback |
+| `media.shuffle` | -- | Toggle shuffle mode |
+| `media.repeat` | -- | Toggle repeat mode |
+| `media.open_spotify` | query: search (optional) | Opens Spotify |
+| `media.open_youtube` | query: search (optional) | Opens YouTube |
 
-### Exemplos
+### Examples
 
 ```
-"pausar musica"
-"proxima faixa"
-"abrir Spotify"
-"abrir Spotify com rock brasileiro"
-"abrir YouTube"
-"pesquisar no YouTube lo-fi beats"
+PT: "pausar musica" / "proxima faixa" / "abrir Spotify"
+ES: "pausar musica" / "siguiente cancion" / "abrir Spotify"
+EN: "pause music" / "next track" / "open Spotify"
 ```
 
 ---
 
-## 9. Teclado e Mouse (keyboard. / mouse.)
+## 9. Keyboard and Mouse (keyboard. / mouse.)
 
-### Teclado
+### Keyboard
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `keyboard.type` | text: texto | Digita texto |
-| `keyboard.press` | key: nome da tecla | Pressiona tecla |
-| `keyboard.hotkey` | keys: lista de teclas | Atalho de teclado |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `keyboard.type` | text: text | Types text |
+| `keyboard.press` | key: key name | Presses key |
+| `keyboard.hotkey` | keys: list of keys | Keyboard shortcut |
 | `keyboard.select_all` | -- | Ctrl+A |
 | `keyboard.copy` | -- | Ctrl+C |
 | `keyboard.paste` | -- | Ctrl+V |
@@ -382,71 +434,141 @@ Voce pode usar nomes amigaveis ao inves de caminhos completos:
 
 ### Mouse
 
-| Acao | Parametros | O que faz |
-|------|-----------|-----------|
-| `mouse.click` | button: "left"/"right"/"middle", x/y: coordenadas (opcional) | Clique |
-| `mouse.double_click` | x/y: coordenadas (opcional) | Duplo clique |
-| `mouse.scroll` | direction: "up"/"down"/"left"/"right", amount: int | Rolar |
-| `mouse.move` | x: int, y: int | Mover cursor |
+| Action | Parameters | Description |
+|--------|-----------|-------------|
+| `mouse.click` | button: "left"/"right"/"middle", x/y: coords (optional) | Click |
+| `mouse.double_click` | x/y: coords (optional) | Double click |
+| `mouse.scroll` | direction: "up"/"down"/"left"/"right", amount: int | Scroll |
+| `mouse.move` | x: int, y: int | Move cursor |
 
-### Teclas reconhecidas
+### Recognized Keys
 
 enter, escape, esc, tab, backspace, delete, home, end, pageup, pagedown,
-up, down, left, right, f1 a f12, print screen, windows, win, space, espaco
+up, down, left, right, f1 to f12, print screen, windows, win, space
 
-### Modificadores reconhecidos
+### Recognized Modifiers
 
-ctrl, control, controle, alt, shift, win, windows
+ctrl, control, alt, shift, win, windows
 
-### Exemplos
+### Examples
 
 ```
-"digitar ola mundo"
-"copiar"
-"colar"
-"desfazer"
-"refazer"
-"selecionar tudo"
-"salvar"
-"ctrl z"
-"clicar"
-"duplo clique"
-"rolar para baixo"
+PT: "digitar ola mundo" / "copiar" / "colar" / "desfazer" / "selecionar tudo"
+ES: "escribir hola mundo" / "copiar" / "pegar" / "deshacer" / "seleccionar todo"
+EN: "type hello world" / "copy" / "paste" / "undo" / "select all"
 ```
 
 ---
 
-## Regras do modo offline
+## Offline Mode Rules
 
-Quando nao ha API de IA disponivel, o sistema usa correspondencia de palavras-chave.
-Os seguintes comandos funcionam offline:
+When no AI API is available, the system uses keyword matching. The following commands work offline, organized by language:
 
-### Sistema
+### Portuguese (PT)
+
+**System:**
 - "abrir calculadora", "abrir bloco de notas", "abrir explorador"
 - "minimizar", "maximizar", "area de trabalho"
 - "bloquear tela", "bloquear computador"
 - "tirar print", "captura de tela", "screenshot"
 - "aumentar volume", "diminuir volume", "baixar volume", "silenciar", "mudo"
 
-### Navegador
+**Browser:**
 - "abrir chrome", "abrir google chrome", "abrir edge"
 - "nova aba", "nova guia", "fechar aba", "fechar guia"
 - "voltar", "pagina anterior", "avancar", "proxima pagina"
 - "recarregar", "atualizar pagina", "f5"
 - "rolar para baixo", "descer", "rolar para cima", "subir"
 
-### Office
+**Office:**
 - "abrir word", "abrir excel", "abrir powerpoint"
 - "salvar", "salva", "desfazer", "copiar", "colar", "recortar"
 - "selecionar tudo"
 
-### Midia
+**Media:**
 - "pausar", "parar musica", "play pause"
 - "proxima musica", "proxima faixa"
 - "musica anterior", "faixa anterior"
 
-### Pesquisa (prefixos)
-- "pesquisar ...", "buscar ...", "procurar ...", "google ..."
+**Search prefixes:** "pesquisar ...", "buscar ...", "procurar ...", "google ..."
+**Type prefixes:** "digitar ...", "escrever ...", "escreva ..."
 
-### Digitacao (prefixos)
-- "digitar ...", "escrever ...", "escreva ..."
+### Spanish (ES)
+
+**System:**
+- "abrir calculadora", "abrir bloc de notas", "abrir explorador"
+- "minimizar", "maximizar", "escritorio", "mostrar escritorio"
+- "bloquear pantalla", "bloquear computadora"
+- "captura de pantalla", "screenshot", "pantallazo"
+- "subir volumen", "aumentar volumen", "bajar volumen", "silenciar", "mutear"
+
+**Browser:**
+- "abrir chrome", "abrir google chrome", "abrir edge"
+- "nueva pestana", "cerrar pestana"
+- "volver", "pagina anterior", "atras"
+- "avanzar", "siguiente pagina"
+- "recargar", "actualizar pagina"
+- "bajar", "desplazar abajo", "subir", "desplazar arriba"
+
+**Office:**
+- "abrir word", "abrir excel", "abrir powerpoint"
+- "guardar", "deshacer", "rehacer", "copiar", "pegar", "cortar"
+- "seleccionar todo"
+
+**Media:**
+- "pausar", "parar musica", "play pause"
+- "siguiente cancion", "siguiente pista"
+- "cancion anterior", "pista anterior"
+
+**Search prefixes:** "buscar ...", "busqueda ...", "google ...", "investigar ..."
+**Type prefixes:** "escribir ...", "escribe ...", "teclear ...", "digitar ..."
+
+### English (EN)
+
+**System:**
+- "open calculator", "open notepad", "open text editor", "open file explorer"
+- "minimize", "maximize", "show desktop"
+- "lock screen", "lock computer"
+- "take screenshot", "screenshot", "screen capture", "print screen"
+- "volume up", "increase volume", "volume down", "decrease volume", "mute"
+
+**Browser:**
+- "open chrome", "open google chrome", "open edge"
+- "new tab", "close tab"
+- "go back", "back", "previous page"
+- "go forward", "forward", "next page"
+- "reload", "refresh", "refresh page"
+- "scroll down", "scroll up"
+
+**Office:**
+- "open word", "open excel", "open powerpoint"
+- "save", "undo", "redo", "copy", "paste", "cut"
+- "select all"
+
+**Media:**
+- "pause", "stop music", "play pause"
+- "next song", "next track"
+- "previous song", "previous track"
+
+**Search prefixes:** "search for ...", "look up ...", "search ...", "google ...", "find ..."
+**Type prefixes:** "type ...", "write ...", "enter text ..."
+
+---
+
+## Language Flag
+
+Use the `--lang` flag to switch language at startup:
+
+```bash
+python -m src.main --lang en     # English
+python -m src.main --lang es     # Spanish
+python -m src.main --lang pt     # Portuguese (default)
+```
+
+This automatically adjusts:
+- AI system prompt language
+- Offline rule matching
+- Wake word
+- TTS voice selection
+- Speech recognition language
+- Remote mobile UI language

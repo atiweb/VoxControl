@@ -1,90 +1,114 @@
-# Arquitetura e Desenvolvimento
+# Architecture and Development
 
-Documentacao tecnica da arquitetura do VoxControl para desenvolvedores e contribuidores.
+Technical documentation of VoxControl's architecture for developers and contributors.
 
 ---
 
-## Visao geral
+## Overview
 
-O sistema segue uma arquitetura em pipeline:
+The system follows a pipeline architecture:
 
 ```
 [Input]  ->  [STT]  ->  [Intent]  ->  [Dispatch]  ->  [Action]  ->  [Output]
  Audio      Whisper     Claude/AI     Dispatcher     Handlers      TTS
- Texto      (skip)      ou Offline     por prefixo    pyautogui    pyttsx3
+ Text       (skip)      or Offline     by prefix     pyautogui    pyttsx3
 ```
 
-Cada etapa e um modulo independente que pode ser substituido ou estendido.
+Each stage is an independent module that can be replaced or extended.
 
 ---
 
-## Diagrama de modulos
+## Module Diagram
 
 ```
 src/
 |
-|-- main.py                    # CLI, argparse, inicializacao
+|-- main.py                    # CLI, argparse, initialization
+|-- i18n.py                    # Internationalization (PT/ES/EN)
 |
 |-- core/
-|   |-- engine.py              # VoiceEngine: orquestra todo o pipeline
+|   |-- engine.py              # VoiceEngine: orchestrates the full pipeline
 |
 |-- audio/
-|   |-- listener.py            # AudioListener: wake word + captura
-|   |                          # PushToTalkListener: modo F12
-|   |-- transcriber.py         # Transcriber: Whisper ou Vosk
+|   |-- listener.py            # AudioListener: wake word + capture
+|   |                          # PushToTalkListener: F12 mode
+|   |-- transcriber.py         # Transcriber: Whisper or Vosk
 |
 |-- ai/
 |   |-- intent_parser.py       # IntentParser: Claude, OpenAI, offline
-|   |-- prompts.py             # SYSTEM_PROMPT com 80+ acoes
+|   |-- prompts.py             # Multi-language system prompts with 80+ actions
 |
 |-- actions/
-|   |-- dispatcher.py          # ActionDispatcher: roteamento
-|   |-- system_control.py      # SystemControl: SO Windows
+|   |-- dispatcher.py          # ActionDispatcher: routing
+|   |-- system_control.py      # SystemControl: Windows OS
 |   |-- browser_control.py     # BrowserControl: Chrome/Edge/Firefox
 |   |-- whatsapp_control.py    # WhatsAppControl: WhatsApp Web
 |   |-- office_control.py      # OfficeControl: Word/Excel/PPT
-|   |-- file_control.py        # FileControl: Explorador, pastas
+|   |-- file_control.py        # FileControl: Explorer, folders
 |   |-- media_control.py       # MediaControl: Spotify, YouTube
-|   |-- keyboard_control.py    # KeyboardControl: teclado, mouse
+|   |-- keyboard_control.py    # KeyboardControl: keyboard, mouse
 |
 |-- voice/
 |   |-- speaker.py             # Speaker: TTS pyttsx3
 |
 |-- remote/
     |-- server.py              # FastAPI + WebSocket
-    |-- static/index.html      # Interface mobile
+    |-- static/index.html      # Mobile interface
 ```
 
 ---
 
-## Fluxo de dados detalhado
+## i18n Module (src/i18n.py)
 
-### 1. Captura de audio (listener.py)
+The internationalization module centralizes all language-specific data:
+
+| Data | Description |
+|------|-------------|
+| `SUPPORTED_LANGUAGES` | `["pt", "es", "en"]` |
+| `DEFAULT_WAKE_WORDS` | Wake word + aliases per language |
+| `VOICE_PATTERNS` | TTS voice search patterns per language |
+| `SPEECH_RECOGNITION_LANG` | Web Speech API language codes |
+| `CONFIRM_WORDS` / `CANCEL_WORDS` | Confirmation/cancel words per language |
+| `FOLDER_ALIASES_I18N` | Folder aliases per language (documents, downloads, etc.) |
+| `SEARCH_PREFIXES` / `TYPE_PREFIXES` | Offline parser prefixes per language |
+| `OFFLINE_RULES` | ~35 keyword-matching rules per language |
+| `STRINGS` | All UI strings (engine, remote, dispatcher) |
+
+Key functions:
+- `set_language(lang_code)` -- Sets the active language (accepts "pt-BR", "es-ES", "en-US", etc.)
+- `get_language()` -- Returns the current 2-letter language code
+- `t(key, **kwargs)` -- Returns a translated string for the current language
+
+---
+
+## Data Flow
+
+### 1. Audio Capture (listener.py)
 
 ```
-Microfone (sounddevice)
+Microphone (sounddevice)
     |
     v
-AudioListener._audio_callback()     # Coleta chunks de audio
+AudioListener._audio_callback()     # Collects audio chunks
     |
     v
-AudioListener._listen_loop()        # Loop principal em thread
+AudioListener._listen_loop()        # Main loop in thread
     |
-    |-- Modo wake word:
-    |   |-- Acumula buffer de 2 segundos
-    |   |-- Verifica energia do audio (min_speech_energy)
-    |   |-- Transcreve janela com Whisper para detectar wake word
-    |   |-- Se detectada: muda para modo captura
+    |-- Wake word mode:
+    |   |-- Accumulates 2-second buffer
+    |   |-- Checks audio energy (min_speech_energy)
+    |   |-- Transcribes window with Whisper to detect wake word
+    |   |-- If detected: switches to capture mode
     |
-    |-- Modo captura:
-    |   |-- Grava audio ate silencio (silence_timeout) ou timeout
-    |   |-- Envia numpy array para callback on_command()
+    |-- Capture mode:
+    |   |-- Records audio until silence (silence_timeout) or timeout
+    |   |-- Sends numpy array to on_command() callback
     |
     v
-engine.process_audio(audio_data)    # Processamento pelo engine
+engine.process_audio(audio_data)    # Processing by engine
 ```
 
-### 2. Transcricao (transcriber.py)
+### 2. Transcription (transcriber.py)
 
 ```
 numpy array (float32, 16kHz)
@@ -94,50 +118,52 @@ Transcriber.transcribe()
     |
     |-- faster-whisper:
     |   |-- WhisperModel.transcribe()
-    |   |-- VAD filter integrado
-    |   |-- beam_size para qualidade
-    |   |-- Retorna texto em portugues
+    |   |-- Built-in VAD filter
+    |   |-- beam_size for quality
+    |   |-- Returns text in configured language
     |
     |-- vosk:
     |   |-- KaldiRecognizer.AcceptWaveform()
     |   |-- JSON result
-    |   |-- Retorna texto
+    |   |-- Returns text
     |
     v
-texto: str (ex: "abrir calculadora")
+text: str (e.g., "open calculator")
 ```
 
-### 3. Interpretacao de intencao (intent_parser.py)
+### 3. Intent Interpretation (intent_parser.py)
 
 ```
-texto em portugues
+text in user's language
     |
     v
 IntentParser.parse()
     |
-    |-- Tenta backend primario (Claude):
-    |   |-- Envia texto + SYSTEM_PROMPT para API
-    |   |-- Recebe JSON estruturado
-    |   |-- Valida campos obrigatorios
+    |-- Gets current language from i18n
     |
-    |-- Se falhar, tenta fallback (OpenAI):
-    |   |-- Mesmo processo com API diferente
+    |-- Tries primary backend (Claude):
+    |   |-- Sends text + language-specific SYSTEM_PROMPT to API
+    |   |-- Receives structured JSON
+    |   |-- Validates required fields
     |
-    |-- Se ambos falharem, usa offline:
+    |-- If fails, tries fallback (OpenAI):
+    |   |-- Same process with different API
+    |
+    |-- If both fail, uses offline:
     |   |-- _offline_parse(): regex/contains matching
-    |   |-- ~40 regras pre-definidas
+    |   |-- Uses OFFLINE_RULES for current language (~35 rules)
     |
     v
 {
   "action": "system.open_app",
   "params": {"app": "calc"},
   "confidence": 0.95,
-  "response_text": "Abrindo a calculadora.",
+  "response_text": "Opening calculator.",   // in user's language
   "requires_confirmation": false
 }
 ```
 
-### 4. Despacho (dispatcher.py)
+### 4. Dispatch (dispatcher.py)
 
 ```
 intent dict
@@ -145,9 +171,9 @@ intent dict
     v
 ActionDispatcher.dispatch()
     |
-    |-- Extrai prefixo: "system" de "system.open_app"
+    |-- Extracts prefix: "system" from "system.open_app"
     |
-    |-- Roteia para handler:
+    |-- Routes to handler:
     |   system.   -> SystemControl.execute()
     |   browser.  -> BrowserControl.execute()
     |   whatsapp. -> WhatsAppControl.execute()
@@ -158,86 +184,88 @@ ActionDispatcher.dispatch()
     |   mouse.    -> KeyboardControl.execute()
     |
     v
-resultado: str (ex: "Calculadora aberta.")
+result: str (internal log string)
 ```
 
-### 5. Execucao da acao (handlers)
+### 5. Action Execution (handlers)
 
-Cada handler usa uma combinacao de:
-- **pyautogui**: atalhos de teclado, mouse, screenshots
-- **pywinauto**: foco em janelas, controle de apps
-- **subprocess**: abrir programas, comandos do sistema
-- **win32com**: API COM para Office (mais confiavel)
-- **webbrowser**: abrir URLs
-- **os.startfile**: abrir arquivos e URIs do Windows
+Each handler uses a combination of:
+- **pyautogui**: keyboard shortcuts, mouse, screenshots
+- **pywinauto**: window focus, app control
+- **subprocess**: open programs, system commands
+- **win32com**: COM API for Office (more reliable)
+- **webbrowser**: open URLs
+- **os.startfile**: open files and Windows URIs
 
-### 6. Resposta por voz (speaker.py)
+### 6. Voice Response (speaker.py)
 
 ```
-texto de resposta
+response_text from intent (in user's language)
     |
     v
 Speaker.say()
     |
-    |-- Thread separada (nao bloqueia)
+    |-- Separate thread (non-blocking)
     |-- pyttsx3 engine
-    |-- Voz PT selecionada automaticamente
+    |-- Voice auto-selected based on language (VOICE_PATTERNS)
     |
     v
-Audio no alto-falante
+Audio on speaker
 ```
+
+> **Note**: TTS uses `intent["response_text"]` directly. This text is already in the user's language -- generated by AI in AI mode, or from language-specific offline rules in offline mode.
 
 ---
 
-## Classes principais
+## Key Classes
 
 ### VoiceEngine (core/engine.py)
 
-Orquestrador central. Conecta todos os modulos.
+Central orchestrator. Connects all modules.
 
 ```python
 class VoiceEngine:
-    def setup()              # Inicializa todos os modulos
-    def process_audio(data)  # Pipeline completo: STT -> AI -> acao -> TTS
-    def process_text(text)   # Pula STT, direto para AI -> acao -> TTS
+    def setup()              # Initializes all modules
+    def process_audio(data)  # Full pipeline: STT -> AI -> action -> TTS
+    def process_text(text)   # Skips STT, goes to AI -> action -> TTS
 ```
 
-Propriedades:
-- `transcriber`: instancia do Transcriber
-- `speaker`: instancia do Speaker
+Properties:
+- `transcriber`: Transcriber instance
+- `speaker`: Speaker instance
 
 ### IntentParser (ai/intent_parser.py)
 
-Interpreta linguagem natural em acoes estruturadas.
+Interprets natural language into structured actions.
 
 ```python
 class IntentParser:
-    def parse(text) -> dict          # Retorna intencao com acao, params, confianca
-    def check_confirmation() -> bool # Verifica se usuario confirmou acao arriscada
+    def parse(text) -> dict          # Returns intent with action, params, confidence
+    def check_confirmation() -> bool # Checks if user confirmed risky action
 ```
 
 Backends:
 - `_parse_claude()`: Anthropic Messages API
 - `_parse_openai()`: OpenAI Chat Completions API
-- `_offline_parse()`: Regex/contains matching
+- `_offline_parse()`: Language-aware keyword matching (uses `OFFLINE_RULES`)
 
 ### ActionDispatcher (actions/dispatcher.py)
 
-Roteia intencoes para handlers especializados.
+Routes intents to specialized handlers.
 
 ```python
 class ActionDispatcher:
-    def dispatch(intent) -> str      # Executa acao e retorna texto de resposta
-    def get_available_actions() -> list  # Lista todas as acoes suportadas
+    def dispatch(intent) -> str      # Executes action and returns result
+    def get_available_actions() -> list  # Lists all supported actions
 ```
 
 ---
 
-## Como adicionar um novo handler
+## Adding a New Handler
 
-### Exemplo: Adicionar controle do Telegram
+### Example: Add Telegram Control
 
-1. Crie `src/actions/telegram_control.py`:
+1. Create `src/actions/telegram_control.py`:
 
 ```python
 import logging
@@ -250,41 +278,41 @@ class TelegramControl:
         sub = action.replace("telegram.", "")
         method = getattr(self, f"_{sub}", None)
         if method is None:
-            return f"Acao Telegram desconhecida: {action}"
+            return f"Unknown Telegram action: {action}"
         return method(params)
 
     def _open(self, params: dict) -> str:
         webbrowser.open("https://web.telegram.org")
-        return "Telegram Web aberto."
+        return "Telegram Web opened."
 
     def _send_message(self, params: dict) -> str:
         contact = params.get("contact", "")
         message = params.get("message", "")
-        # ... implementacao
-        return f"Mensagem enviada para {contact}."
+        # ... implementation
+        return f"Message sent to {contact}."
 ```
 
-2. Registre no `dispatcher.py`:
+2. Register in `dispatcher.py`:
 
 ```python
 from .telegram_control import TelegramControl
 
 class ActionDispatcher:
     def __init__(self, config):
-        # ... handlers existentes
+        # ... existing handlers
         self._telegram = TelegramControl()
 
     def _route(self, action, params):
         routes = {
-            # ... rotas existentes
+            # ... existing routes
             "telegram": self._telegram.execute,
         }
 ```
 
-3. Adicione as acoes no `prompts.py`:
+3. Add actions to `prompts.py` (in the `_ACTIONS_SECTION`):
 
 ```python
-SYSTEM_PROMPT = """
+_ACTIONS_SECTION = """
 ...
 ### Telegram
 - telegram.open -- params: {}
@@ -293,130 +321,171 @@ SYSTEM_PROMPT = """
 """
 ```
 
-4. (Opcional) Adicione regras offline no `intent_parser.py`:
+4. (Optional) Add offline rules to `src/i18n.py`:
 
 ```python
-def _offline_parse(self, text):
-    rules = [
-        # ... regras existentes
+OFFLINE_RULES = {
+    "pt": [
+        # ... existing rules
         (["abrir telegram"], "telegram.open", {}, "Abrindo o Telegram."),
-    ]
+    ],
+    "es": [
+        # ... existing rules
+        (["abrir telegram"], "telegram.open", {}, "Abriendo Telegram."),
+    ],
+    "en": [
+        # ... existing rules
+        (["open telegram"], "telegram.open", {}, "Opening Telegram."),
+    ],
+}
 ```
 
 ---
 
-## Como adicionar um novo comando offline
+## Adding a New Offline Command
 
-Edite `_offline_parse()` em `src/ai/intent_parser.py`:
+Edit the `OFFLINE_RULES` dict in `src/i18n.py`:
 
 ```python
-rules = [
-    # ... regras existentes
-    (["minha frase", "frase alternativa"], "action.name", {"param": "value"}, "Resposta."),
-]
+OFFLINE_RULES = {
+    "pt": [
+        # ... existing rules
+        (["minha frase", "frase alternativa"], "action.name", {"param": "value"}, "Resposta em portugues."),
+    ],
+    "es": [
+        # ... existing rules
+        (["mi frase", "frase alternativa"], "action.name", {"param": "value"}, "Respuesta en espanol."),
+    ],
+    "en": [
+        # ... existing rules
+        (["my phrase", "alternative phrase"], "action.name", {"param": "value"}, "Response in English."),
+    ],
+}
 ```
 
-Formato:
-- Lista de triggers (strings que devem estar contidas no texto)
-- Action name (categoria.acao)
-- Parametros dict
-- Texto de resposta
+Format:
+- List of triggers (strings that must be contained in the text)
+- Action name (category.action)
+- Parameters dict
+- Response text **in the rule's language**
 
 ---
 
-## Stack tecnologico
+## Tech Stack
 
-| Camada | Tecnologia | Funcao |
-|--------|-----------|--------|
-| STT | faster-whisper (CTranslate2) | Transcricao offline, otimizada |
-| STT alt. | Vosk (Kaldi) | Alternativa leve |
-| IA | Anthropic Claude API | Interpretacao de linguagem natural |
-| IA alt. | OpenAI API | Fallback |
-| Automacao | pyautogui | Mouse, teclado, screenshots |
-| Windows | pywinauto | Controle de janelas |
-| Office | win32com (pywin32) | API COM do Office |
-| TTS | pyttsx3 (SAPI5) | Sintese de voz em PT |
-| Servidor | FastAPI + uvicorn | API REST + WebSocket |
-| Frontend | HTML/CSS/JS vanilla | Interface mobile responsiva |
-| Config | PyYAML + python-dotenv | Arquivos YAML + .env |
-| CLI | argparse + Rich | Interface de terminal formatada |
+| Layer | Technology | Function |
+|-------|-----------|----------|
+| STT | faster-whisper (CTranslate2) | Offline transcription, optimized |
+| STT alt. | Vosk (Kaldi) | Lightweight alternative |
+| AI | Anthropic Claude API | Natural language interpretation |
+| AI alt. | OpenAI API | Fallback |
+| Automation | pyautogui | Mouse, keyboard, screenshots |
+| Windows | pywinauto | Window control |
+| Office | win32com (pywin32) | Office COM API |
+| TTS | pyttsx3 (SAPI5) | Voice synthesis (PT/ES/EN) |
+| Server | FastAPI + uvicorn | REST API + WebSocket |
+| Frontend | HTML/CSS/JS vanilla | Responsive mobile interface |
+| Config | PyYAML + python-dotenv | YAML + .env files |
+| CLI | argparse + Rich | Formatted terminal interface |
+| i18n | src/i18n.py | Centralized translations (3 languages) |
 
 ---
 
-## Seguranca
+## Security
 
-- **Chaves de API**: armazenadas em `.env`, excluido do Git via `.gitignore`
-- **Sem telemetria**: nenhum dado enviado exceto para APIs de IA quando configuradas
-- **Rede local**: servidor remoto aceita conexoes apenas na rede Wi-Fi local
-- **Offline-first**: funciona completamente sem internet (apos download do modelo)
-- **Confirmacao de acoes**: acoes perigosas (shutdown, delete) requerem confirmacao por voz
+- **API keys**: stored in `.env`, excluded from Git via `.gitignore`
+- **No telemetry**: no data sent except to AI APIs when configured
+- **Local network**: remote server accepts connections only on local Wi-Fi
+- **Offline-first**: works completely without internet (after model download)
+- **Action confirmation**: dangerous actions (shutdown, delete) require voice confirmation
 
 ---
 
 ## Roadmap
 
-### v1.1
-- [ ] Integracao com Telegram Bot (alternativa ao WebSocket)
-- [ ] Tray icon (bandeja do sistema) com menu
-- [ ] Historico de comandos persistente
+### v1.1 (Current)
+- [x] Multi-language support (Portuguese, Spanish, English)
+- [x] Dynamic mobile UI language adaptation
+- [x] Language-aware offline rules (~35 rules per language)
+- [ ] Telegram Bot integration (alternative to WebSocket)
+- [ ] System tray icon with menu
+- [ ] Persistent command history
 
 ### v1.2
-- [ ] Plugin system para extensoes da comunidade
-- [ ] Suporte a macros (sequencia de comandos)
-- [ ] Perfis de configuracao (trabalho, casa, jogo)
+- [ ] Plugin system for community extensions
+- [ ] Macro support (command sequences)
+- [ ] Configuration profiles (work, home, gaming)
 
 ### v2.0
-- [ ] Interface grafica completa (Electron ou Tauri)
-- [ ] Suporte a multiplos idiomas (ES, EN, FR)
-- [ ] Empacotamento como .exe via PyInstaller
-- [ ] Streaming de audio do celular (sem Web Speech API)
+- [ ] Full GUI (Electron or Tauri)
+- [ ] Additional languages (FR, DE, IT)
+- [ ] Packaging as .exe via PyInstaller
+- [ ] Phone audio streaming (without Web Speech API)
 
 ---
 
-## Testes
+## Testing
 
-### Teste rapido
+### Quick test
 
 ```bash
-# Modo texto (sem microfone, sem voz)
+# Text mode (no microphone, no voice)
 python -m src.main --text --no-voice --no-remote
 
+# English
+python -m src.main --text --no-voice --no-remote --lang en
+>>> open calculator
+-> Calculator opened.
+>>> search weather
+-> Searching 'weather' on Google.
+>>> copy
+-> Copied.
+>>> exit
+
+# Portuguese
+python -m src.main --text --no-voice --no-remote --lang pt
 >>> abrir calculadora
 -> Calc aberto.
 >>> pesquisar clima
 -> Pesquisando 'clima' no Google.
->>> copiar
--> Copiado.
 >>> sair
+
+# Spanish
+python -m src.main --text --no-voice --no-remote --lang es
+>>> abrir calculadora
+-> Calculadora abierta.
+>>> buscar clima
+-> Buscando 'clima' en Google.
+>>> salir
 ```
 
-### Verificar modulos
+### Verify modules
 
 ```bash
 python -m src.main --setup
 ```
 
-### Testar API remotamente
+### Test API remotely
 
 ```bash
-# Em outro terminal ou maquina na mesma rede
-curl -X POST http://IP:8765/command -H "Content-Type: application/json" -d "{\"text\": \"abrir calculadora\"}"
+# From another terminal or machine on the same network
+curl http://IP:8765/status
 ```
 
 ---
 
-## Contribuindo
+## Contributing
 
-1. Fork o repositorio
-2. Crie uma branch: `git checkout -b minha-feature`
-3. Faca alteracoes
-4. Teste com `python -m src.main --text`
-5. Envie um PR
+1. Fork the repository
+2. Create a branch: `git checkout -b my-feature`
+3. Make changes
+4. Test with `python -m src.main --text`
+5. Submit a PR
 
-### Areas prioritarias
+### Priority Areas
 
-- Mais handlers de acoes (Outlook, Teams, VS Code, Telegram)
-- Testes automatizados (pytest)
-- Melhorias no parser offline (mais regras em PT)
-- Documentacao em ingles
-- Empacotamento como executavel
+- More action handlers (Outlook, Teams, VS Code, Telegram)
+- Automated tests (pytest)
+- Improvements to offline parser (more rules)
+- Additional language support (FR, DE, IT)
+- Packaging as executable

@@ -1,178 +1,216 @@
-# Guia de Configuracao
+# Configuration Guide
 
-Referencia de todas as opcoes configuraveis do VoxControl.
+Reference for all configurable options in VoxControl.
 
-O sistema usa duas fontes de configuracao:
-- **`config/settings.yaml`** -- configuracoes gerais (versionadas no Git)
-- **`.env`** -- chaves de API e overrides sensiveis (nao versionado)
+The system uses two configuration sources:
+- **`config/settings.yaml`** -- general settings (versioned in Git)
+- **`.env`** -- API keys and sensitive overrides (not versioned)
 
-Valores do `.env` tem prioridade sobre o `settings.yaml`.
+Values from `.env` take priority over `settings.yaml`.
 
 ---
 
-## Variaveis de ambiente (.env)
+## Environment Variables (.env)
 
 ```env
 # =====================================================
-# CHAVES DE API (pelo menos uma recomendada)
+# LANGUAGE
 # =====================================================
 
-ANTHROPIC_API_KEY=sk-ant-...        # Claude (primario)
+APP_LANGUAGE=pt-BR                  # pt-BR | pt-PT | es-ES | es-MX | en-US | en-GB
+                                    # Short codes also accepted: pt | es | en
+
+# =====================================================
+# API KEYS (at least one recommended)
+# =====================================================
+
+ANTHROPIC_API_KEY=sk-ant-...        # Claude (primary)
 OPENAI_API_KEY=sk-...               # OpenAI (fallback)
 
 # =====================================================
-# BACKEND DE IA
+# AI BACKEND
 # =====================================================
 
 AI_BACKEND=claude                   # claude | openai | offline
-CLAUDE_MODEL=claude-haiku-4-5-20251001   # modelo Claude
-OPENAI_MODEL=gpt-4o-mini           # modelo OpenAI
+CLAUDE_MODEL=claude-haiku-4-5-20251001   # Claude model
+OPENAI_MODEL=gpt-4o-mini           # OpenAI model
 
 # =====================================================
 # WHISPER (STT)
 # =====================================================
 
 WHISPER_MODEL=small                 # tiny | base | small | medium | large-v3
-WHISPER_LANGUAGE=pt                 # codigo do idioma
+# WHISPER_LANGUAGE=pt               # Auto-set from APP_LANGUAGE. Override only if needed.
 
 # =====================================================
 # WAKE WORD
 # =====================================================
 
-WAKE_WORD=computador                # palavra de ativacao
-LISTEN_TIMEOUT=5                    # segundos de escuta apos ativacao
+# WAKE_WORD=computador              # Auto-set from APP_LANGUAGE:
+                                    #   pt -> computador
+                                    #   es -> computadora
+                                    #   en -> computer
+                                    # Override only for custom wake word.
+LISTEN_TIMEOUT=5                    # seconds of listening after activation
 
 # =====================================================
-# COMPORTAMENTO
+# BEHAVIOR
 # =====================================================
 
 VOICE_RESPONSE=true                 # true | false
 LOG_LEVEL=INFO                      # DEBUG | INFO | WARNING | ERROR
 
 # =====================================================
-# SERVIDOR REMOTO
+# REMOTE SERVER
 # =====================================================
 
-REMOTE_SERVER_HOST=0.0.0.0          # endereco de escuta
-REMOTE_SERVER_PORT=8765             # porta do servidor
-SSL_CERTFILE=                       # caminho para certificado HTTPS
-SSL_KEYFILE=                        # caminho para chave privada HTTPS
+REMOTE_SERVER_HOST=0.0.0.0          # listen address
+REMOTE_SERVER_PORT=8765             # server port
+SSL_CERTFILE=                       # path to HTTPS certificate
+SSL_KEYFILE=                        # path to HTTPS private key
 ```
 
 ---
 
-## settings.yaml -- Referencia completa
+## settings.yaml -- Complete Reference
 
-### Secao `app`
+### Section `app`
 
 ```yaml
 app:
-  name: "VoxControl"    # nome da aplicacao
-  version: "1.0.0"           # versao
-  language: "pt-BR"          # pt-BR ou pt-PT
+  name: "VoxControl"
+  version: "1.1.0"
+  # Language: pt-BR | pt-PT | es-ES | es-MX | en-US | en-GB
+  # Also accepts short codes: pt | es | en
+  language: "pt-BR"
 ```
 
-### Secao `audio`
+**Language auto-configuration:** When you set `app.language`, the following are automatically configured (unless manually overridden):
 
-Configuracoes de captura de microfone.
+| Setting | pt | es | en |
+|---------|----|----|-----|
+| Whisper language | pt | es | en |
+| Wake word | computador | computadora | computer |
+| TTS voice | Portuguese | Spanish | English |
+| AI responses | Portuguese | Spanish | English |
+| Offline rules | ~35 PT commands | ~35 ES commands | ~35 EN commands |
+| Mobile UI | Portuguese | Spanish | English |
+
+### Section `audio`
+
+Microphone capture settings.
 
 ```yaml
 audio:
-  sample_rate: 16000          # taxa de amostragem (Hz), 16000 e o padrao do Whisper
-  channels: 1                 # canais (1 = mono, obrigatorio para Whisper)
-  chunk_duration_ms: 30       # duracao de cada chunk de audio em ms
-  input_device: null          # null = dispositivo padrao do sistema
-                              # use um numero inteiro para selecionar outro mic
-  silence_timeout: 1.5        # segundos de silencio para finalizar captura
-  min_speech_energy: 0.01     # energia minima para considerar como fala (0.0 - 1.0)
+  sample_rate: 16000          # sample rate (Hz), 16000 is Whisper's default
+  channels: 1                 # channels (1 = mono, required for Whisper)
+  chunk_duration_ms: 30       # duration of each audio chunk in ms
+  input_device: null          # null = system default device
+                              # use an integer to select another mic
+  silence_timeout: 1.5        # seconds of silence to end capture
+  min_speech_energy: 0.01     # minimum energy to consider as speech (0.0 - 1.0)
 ```
 
-**Como encontrar o numero do dispositivo:**
+**How to find the device number:**
 ```python
 import sounddevice
 print(sounddevice.query_devices())
 ```
 
-### Secao `stt` (Speech-to-Text)
+### Section `stt` (Speech-to-Text)
 
 ```yaml
 stt:
-  engine: "faster-whisper"    # "faster-whisper" ou "vosk"
+  engine: "faster-whisper"    # "faster-whisper" or "vosk"
 
   whisper:
     model_size: "small"       # tiny | base | small | medium | large-v3
-    language: "pt"            # codigo do idioma
+    language: "pt"            # Auto-set from app.language. Override only if needed.
     device: "auto"            # auto | cpu | cuda
-    compute_type: "int8"      # int8 (rapido/leve) | float16 (GPU) | float32 (preciso)
-    beam_size: 5              # qualidade da transcricao (1-10, maior = melhor/mais lento)
-    vad_filter: true          # filtrar silencio automaticamente
+    compute_type: "int8"      # int8 (fast/light) | float16 (GPU) | float32 (precise)
+    beam_size: 5              # transcription quality (1-10, higher = better/slower)
+    vad_filter: true          # automatically filter silence
 
   vosk:
-    model_path: "models/vosk-model-pt"   # caminho para modelo Vosk baixado
+    model_path: "models/vosk-model-pt"   # path to downloaded Vosk model
 ```
 
-**Escolha de modelo Whisper:**
+**Whisper model comparison:**
 
-| Modelo | Download | RAM | Velocidade (CPU) | Quando usar |
-|--------|----------|-----|-------------------|-------------|
-| tiny | ~75MB | ~1GB | ~10x tempo real | Hardware limitado |
-| base | ~150MB | ~1GB | ~7x tempo real | Uso casual |
-| **small** | **~500MB** | **~2GB** | **~4x tempo real** | **Uso geral (recomendado)** |
-| medium | ~1.5GB | ~5GB | ~2x tempo real | Precisao alta |
-| large-v3 | ~3GB | ~10GB | ~1x tempo real | Maxima precisao (GPU recomendada) |
+| Model | Download | RAM | Speed (CPU) | When to use |
+|-------|----------|-----|-------------|-------------|
+| tiny | ~75MB | ~1GB | ~10x real time | Limited hardware |
+| base | ~150MB | ~1GB | ~7x real time | Casual use |
+| **small** | **~500MB** | **~2GB** | **~4x real time** | **General use (recommended)** |
+| medium | ~1.5GB | ~5GB | ~2x real time | High accuracy |
+| large-v3 | ~3GB | ~10GB | ~1x real time | Maximum accuracy (GPU recommended) |
 
-### Secao `wake_word`
+### Section `wake_word`
 
 ```yaml
 wake_word:
-  enabled: true               # true = aguarda wake word; false = sempre escutando
-  word: "computador"           # palavra de ativacao principal
-  aliases:                     # variacoes aceitas (sotaques, informalidade)
+  enabled: true               # true = wait for wake word; false = always listening
+  # Wake word: auto-set based on app.language
+  # pt: "computador" | es: "computadora" | en: "computer"
+  # Override here to use a custom wake word
+  word: "computador"
+  # Alternative triggers (accent variations)
+  aliases:
     - "computado"
     - "ei computador"
     - "oi computador"
-  sensitivity: 0.7             # sensibilidade (0.0 - 1.0, maior = mais sensivel)
-  listen_timeout: 6            # segundos de escuta apos wake word
+  sensitivity: 0.7             # sensitivity (0.0 - 1.0, higher = more sensitive)
+  listen_timeout: 6            # seconds of listening after wake word
 ```
 
-### Secao `ai`
+**Default wake words per language:**
+
+| Language | Wake word | Aliases |
+|----------|-----------|---------|
+| pt | computador | computado, ei computador, oi computador |
+| es | computadora | computador, oye computadora, hola computadora |
+| en | computer | hey computer, hi computer, ok computer |
+
+### Section `ai`
 
 ```yaml
 ai:
   backend: "claude"            # "claude" | "openai" | "offline"
-  fallback: "openai"           # backend alternativo se o primario falhar
+  fallback: "openai"           # alternative backend if primary fails
 
   claude:
     model: "claude-haiku-4-5-20251001"
-    max_tokens: 512            # tokens maximos na resposta
-    temperature: 0.1           # criatividade (0.0 = deterministico, 1.0 = criativo)
+    max_tokens: 512            # maximum tokens in response
+    temperature: 0.1           # creativity (0.0 = deterministic, 1.0 = creative)
 
   openai:
     model: "gpt-4o-mini"
     max_tokens: 512
     temperature: 0.1
 
-  min_confidence: 0.6          # confianca minima para executar sem confirmar (0.0 - 1.0)
-  confirm_risky_actions: true  # pede confirmacao por voz para acoes perigosas
+  min_confidence: 0.6          # minimum confidence to execute without confirmation (0.0 - 1.0)
+  confirm_risky_actions: true  # request voice confirmation for dangerous actions
 ```
 
-**Acoes que requerem confirmacao** (quando `confirm_risky_actions: true`):
-- `system.shutdown` (desligar)
-- `system.restart` (reiniciar)
-- `files.delete` (excluir arquivo)
-- Qualquer acao com `requires_confirmation: true` na resposta da IA
+**Actions that require confirmation** (when `confirm_risky_actions: true`):
+- `system.shutdown` (shutdown)
+- `system.restart` (restart)
+- `files.delete` (delete file)
+- Any action with `requires_confirmation: true` in AI response
 
-### Secao `voice_response`
+### Section `voice_response`
 
 ```yaml
 voice_response:
-  enabled: true                # habilitar TTS (texto para voz)
-  rate: 180                    # velocidade da fala (palavras por minuto)
+  enabled: true                # enable TTS (text-to-speech)
+  rate: 180                    # speech rate (words per minute)
   volume: 0.9                  # volume (0.0 - 1.0)
-  prefer_female: true          # preferir voz feminina em portugues
+  prefer_female: true          # prefer female voice
 ```
 
-Para listar vozes disponiveis no seu sistema:
+The TTS engine automatically selects a voice matching the configured language (Portuguese, Spanish, or English).
+
+To list available voices on your system:
 ```python
 import pyttsx3
 engine = pyttsx3.init()
@@ -180,83 +218,83 @@ for v in engine.getProperty('voices'):
     print(v.id, v.name)
 ```
 
-### Secao `browser`
+### Section `browser`
 
 ```yaml
 browser:
   default: "chrome"            # chrome | edge | firefox
-  chrome_path: null            # null = detectar automaticamente
-  edge_path: null              # caminho personalizado se necessario
+  chrome_path: null            # null = auto-detect
+  edge_path: null              # custom path if needed
   firefox_path: null
 ```
 
-### Secao `office`
+### Section `office`
 
 ```yaml
 office:
-  use_com_api: true            # true = API COM (confiavel) | false = atalhos de teclado
-  confirm_before_delete: true  # confirma exclusao de slides, planilhas, etc.
+  use_com_api: true            # true = COM API (reliable) | false = keyboard shortcuts
+  confirm_before_delete: true  # confirm deletion of slides, sheets, etc.
 ```
 
-### Secao `remote`
+### Section `remote`
 
 ```yaml
 remote:
-  enabled: true                # habilitar servidor para controle pelo celular
-  host: "0.0.0.0"              # 0.0.0.0 = acessivel na rede local
-  port: 8765                   # porta do servidor
-  show_qr: true                # exibir QR code no terminal ao iniciar
-  auth_token: ""               # vazio = sem autenticacao | string = token necessario
+  enabled: true                # enable server for phone control
+  host: "0.0.0.0"              # 0.0.0.0 = accessible on local network
+  port: 8765                   # server port
+  show_qr: true                # show QR code in terminal on startup
+  auth_token: ""               # empty = no auth | string = required token
 ```
 
-### Secao `logging`
+### Section `logging`
 
 ```yaml
 logging:
   level: "INFO"                # DEBUG | INFO | WARNING | ERROR
-  file: "logs/voz-controle.log"
-  max_bytes: 5242880           # tamanho maximo do arquivo (5 MB)
-  backup_count: 3              # quantos arquivos de backup manter
+  file: "logs/voxcontrol.log"
+  max_bytes: 5242880           # max file size (5 MB)
+  backup_count: 3              # how many backup files to keep
 ```
 
 ---
 
-## Comandos personalizados (custom_commands.yaml)
+## Custom Commands (custom_commands.yaml)
 
-Adicione atalhos de voz proprios:
+Add your own voice shortcuts:
 
 ```yaml
 custom_commands:
-  # Formato:
-  #   trigger: "frase que voce fala"
-  #   action: "categoria.acao"
-  #   params: { parametros }
+  # Format:
+  #   trigger: "phrase you say"
+  #   action: "category.action"
+  #   params: { parameters }
 
-  - trigger: "abrir gmail"
+  - trigger: "open gmail"
     action: "browser.open_url"
     params:
       url: "https://mail.google.com"
 
-  - trigger: "modo foco"
+  - trigger: "focus mode"
     action: "system.do_not_disturb"
     params:
       enabled: true
 
-  - trigger: "abrir meu projeto"
+  - trigger: "open my project"
     action: "files.open_folder"
     params:
-      path: "C:\\Users\\MeuUsuario\\Projetos\\MeuApp"
+      path: "C:\\Users\\MyUser\\Projects\\MyApp"
 ```
 
-As `actions` disponiveis estao documentadas em [docs/comandos.md](comandos.md).
+Available `actions` are documented in [docs/comandos.md](comandos.md).
 
 ---
 
-## Prioridade de configuracao
+## Configuration Priority
 
-Ordem de prioridade (maior para menor):
+Priority order (highest to lowest):
 
-1. Flags de linha de comando (`--no-voice`, `--ptt`, etc.)
-2. Variaveis de ambiente (`.env`)
+1. CLI flags (`--lang`, `--no-voice`, `--ptt`, etc.)
+2. Environment variables (`.env`)
 3. `config/settings.yaml`
-4. Valores padrao no codigo
+4. Default values in code
