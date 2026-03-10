@@ -123,14 +123,23 @@ class SystemControl:
         return "Janela alternada."
 
     def _minimize(self, params: dict) -> str:
+        app = params.get("app")
+        if app:
+            self._switch_window({"app": app})
         pyautogui.hotkey("win", "down")
-        return "Janela minimizada."
+        return f"{'%s minimizado.' % app.title() if app else 'Janela minimizada.'}"
 
     def _maximize(self, params: dict) -> str:
+        app = params.get("app")
+        if app:
+            self._switch_window({"app": app})
         pyautogui.hotkey("win", "up")
-        return "Janela maximizada."
+        return f"{'%s maximizado.' % app.title() if app else 'Janela maximizada.'}"
 
     def _restore(self, params: dict) -> str:
+        app = params.get("app")
+        if app:
+            self._switch_window({"app": app})
         pyautogui.hotkey("win", "down")
         return "Janela restaurada."
 

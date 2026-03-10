@@ -204,6 +204,44 @@ class IntentParser:
 
         return " ".join(words)
 
+    # Known app names that can appear as targets in voice commands
+    _APP_KEYWORDS = {
+        "chrome", "google chrome", "firefox", "edge", "safari",
+        "word", "excel", "powerpoint", "power point", "outlook",
+        "notepad", "bloco de notas", "bloc de notas",
+        "explorer", "explorador", "spotify", "discord", "vscode",
+        "teams", "whatsapp", "calculadora", "calculator", "calc",
+        "cmd", "powershell", "terminal",
+    }
+
+    def _extract_target_app(self, text: str, action: str, params: dict) -> str | None:
+        """
+        Extract the target application from the command text.
+        Returns the normalized app name or None.
+        """
+        text_lower = text.lower()
+
+        # If params already has an app (e.g., from triggers), use it
+        if params.get("app"):
+            return params["app"]
+        if params.get("browser"):
+            return params["browser"]
+
+        # Search for known app names in the text
+        # Check longer patterns first to avoid partial matches
+        for app in sorted(self._APP_KEYWORDS, key=len, reverse=True):
+            if app in text_lower:
+                # Normalize multi-word app names
+                norm = {
+                    "google chrome": "chrome", "bloco de notas": "notepad",
+                    "bloc de notas": "notepad", "power point": "powerpoint",
+                    "explorador": "explorer", "calculadora": "calc",
+                    "calculator": "calc", "terminal": "cmd",
+                }.get(app, app)
+                return norm
+
+        return None
+
     def _offline_parse(self, text: str) -> dict:
         """
         Simple keyword matching when AI is not available.
@@ -220,9 +258,11 @@ class IntentParser:
             if any(t in text_lower or t in text_normalized
                    or self._normalize_text(t) in text_normalized
                    for t in triggers):
+                target = self._extract_target_app(text_lower, action, params)
                 return {
                     "action": action,
                     "params": params,
+                    "target_app": target,
                     "confidence": 0.85,
                     "response_text": response,
                     "requires_confirmation": False,

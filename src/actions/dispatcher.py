@@ -12,6 +12,7 @@ from .office_control import OfficeControl
 from .file_control import FileControl
 from .media_control import MediaControl
 from .keyboard_control import KeyboardControl
+from .focus_manager import find_and_focus, infer_target_from_action
 from ..i18n import t
 from ..validation import validate_action
 
@@ -70,6 +71,11 @@ class ActionDispatcher:
 
         # Rotear para o handler correto
         try:
+            # Focus the target window before executing the action
+            target_app = intent.get("target_app") or infer_target_from_action(action, params)
+            if target_app:
+                find_and_focus(target_app, action)
+
             result = self._route(action, params)
             return result or response_text or t("done")
         except Exception as e:

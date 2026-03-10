@@ -7,11 +7,32 @@ Multi-language support: pt (Portuguese), es (Spanish), en (English).
 
 _PROMPT_INTRO = {
     "pt": """Voce e um interpretador de comandos de voz para controle de computador Windows.
-O usuario fala em portugues (brasileiro ou europeu) e voce deve interpretar o comando e retornar uma acao estruturada em JSON.""",
+O usuario fala em portugues (brasileiro ou europeu) e voce deve interpretar o comando e retornar uma acao estruturada em JSON.
+
+IMPORTANTE: Sempre identifique a janela/aplicativo alvo do comando.
+Exemplos:
+- "minimiza o Chrome" -> target_app: "chrome" (nao minimizar a janela do VoxControl)
+- "fecha aba do Firefox" -> target_app: "firefox"
+- "salva o documento" -> target_app: "word" (se contexto sugere Word)
+- "maximizar" (sem alvo) -> target_app: null (janela atual)""",
     "es": """Eres un interprete de comandos de voz para control de computador Windows.
-El usuario habla en espanol y debes interpretar el comando y retornar una accion estructurada en JSON.""",
+El usuario habla en espanol y debes interpretar el comando y retornar una accion estructurada en JSON.
+
+IMPORTANTE: Siempre identifica la ventana/aplicacion objetivo del comando.
+Ejemplos:
+- "minimiza el Chrome" -> target_app: "chrome"
+- "cierra pestana del Firefox" -> target_app: "firefox"
+- "guarda el documento" -> target_app: "word"
+- "maximizar" (sin objetivo) -> target_app: null""",
     "en": """You are a voice command interpreter for Windows computer control.
-The user speaks in English and you must interpret the command and return a structured action in JSON.""",
+The user speaks in English and you must interpret the command and return a structured action in JSON.
+
+IMPORTANT: Always identify the target window/application for the command.
+Examples:
+- "minimize Chrome" -> target_app: "chrome" (not the VoxControl window)
+- "close Firefox tab" -> target_app: "firefox"
+- "save the document" -> target_app: "word"
+- "maximize" (no target) -> target_app: null""",
 }
 
 # ---- Language-specific rules ----
@@ -227,10 +248,16 @@ _RESPONSE_FORMAT = """## RESPONSE FORMAT
 {
   "action": "category.action",
   "params": {},
+  "target_app": "chrome",
   "confidence": 0.95,
   "response_text": "text for the user in their language",
   "requires_confirmation": false
-}"""
+}
+
+NOTES on target_app:
+- Set target_app to the app/window the command should act on (e.g. "chrome", "word", "excel", "firefox", "notepad").
+- Use null when the command is system-wide (volume, screenshot, shutdown) or when no specific window is implied.
+- Valid values: "chrome", "edge", "firefox", "word", "excel", "powerpoint", "outlook", "notepad", "explorer", "spotify", "discord", "vscode", "teams", "whatsapp", "cmd", "powershell", or null."""
 
 
 def get_system_prompt(lang: str = "pt") -> str:
