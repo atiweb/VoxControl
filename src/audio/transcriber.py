@@ -38,11 +38,23 @@ class Transcriber:
             compute_type = cfg.get("compute_type", "int8")
 
             logger.info(f"Carregando Whisper '{model_size}' no dispositivo '{device}'...")
-            self._model = WhisperModel(
-                model_size,
-                device=device,
-                compute_type=compute_type,
-            )
+            try:
+                self._model = WhisperModel(
+                    model_size,
+                    device=device,
+                    compute_type=compute_type,
+                )
+            except Exception as e:
+                if device != "cpu":
+                    logger.warning(f"Falha ao carregar no dispositivo '{device}': {e}")
+                    logger.info("Tentando fallback para CPU...")
+                    self._model = WhisperModel(
+                        model_size,
+                        device="cpu",
+                        compute_type="int8",
+                    )
+                else:
+                    raise
             logger.info("Whisper carregado com sucesso.")
         except ImportError:
             logger.error("faster-whisper não instalado. Execute: pip install faster-whisper")
