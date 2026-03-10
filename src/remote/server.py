@@ -54,6 +54,7 @@ _rate_limiter: Optional[RateLimiter] = None
 _connections: dict[WebSocket, str] = {}  # ws -> username
 _server_lang: str = "pt"
 _auth_required: bool = True
+_middleware_added: bool = False
 
 
 def set_engine(engine: "VoiceEngine"):
@@ -374,7 +375,7 @@ def start_server(config: dict, engine: "VoiceEngine", lang: str = "pt"):
     import threading
     import uvicorn
 
-    global _auth, _rate_limiter, _auth_required
+    global _auth, _rate_limiter, _auth_required, _middleware_added
 
     set_engine(engine)
     set_server_lang(lang)
@@ -394,7 +395,9 @@ def start_server(config: dict, engine: "VoiceEngine", lang: str = "pt"):
         max_requests=rate_config.get("max_requests", 60),
         window_seconds=rate_config.get("window_seconds", 60),
     )
-    app.add_middleware(RateLimitMiddleware, rate_limiter=_rate_limiter)
+    if not _middleware_added:
+        app.add_middleware(RateLimitMiddleware, rate_limiter=_rate_limiter)
+        _middleware_added = True
 
     host = config.get("host", "0.0.0.0")
     port = config.get("port", 8765)
