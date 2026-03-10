@@ -104,6 +104,7 @@ _ACTIONS_SECTION = """## AVAILABLE ACTIONS
 - browser.reopen_tab -- params: {}
 - browser.next_tab -- params: {}
 - browser.prev_tab -- params: {}
+- browser.goto_tab -- params: {number: int} -- note: 1-8 for specific tab, -1 for last tab
 - browser.go_back -- params: {}
 - browser.go_forward -- params: {}
 - browser.refresh -- params: {}
@@ -158,6 +159,9 @@ _ACTIONS_SECTION = """## AVAILABLE ACTIONS
 - office.word.word_count -- params: {}
 - office.word.zoom -- params: {level: int}
 - office.word.new_page -- params: {}
+- office.word.select_paragraph -- params: {}
+- office.word.increase_font -- params: {steps: int} -- note: each step = 1pt increase
+- office.word.decrease_font -- params: {steps: int} -- note: each step = 1pt decrease
 
 ### Excel
 - office.excel.open -- params: {file: string | null}

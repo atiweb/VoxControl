@@ -1,114 +1,76 @@
-# ============================================================
-# VoxControl -- general settings
-# ============================================================
-
-app:
-  name: "VoxControl"
-  version: "1.1.0"
-  # Language: pt-BR | pt-PT | es-ES | es-MX | en-US | en-GB
-  # Also accepts short codes: pt | es | en
-  language: "pt-BR"
-
-audio:
-  sample_rate: 16000
-  channels: 1
-  chunk_duration_ms: 30      # for VAD
-  # Microphone device: null = system default
-  input_device: null
-  # Silence to end capture (seconds)
-  silence_timeout: 1.5
-  # Minimum volume to detect speech (0.0 - 1.0)
-  min_speech_energy: 0.01
-
-stt:
-  # "faster-whisper" | "vosk"
-  engine: "faster-whisper"
-  whisper:
-    model_size: "small"      # tiny | base | small | medium | large-v3
-    # Language: auto-set based on app.language (pt, es, en)
-    # Override here only if needed
-    language: "pt"
-    device: "auto"           # auto | cpu | cuda
-    compute_type: "int8"     # int8 | float16 | float32
-    beam_size: 5
-    vad_filter: true
-  vosk:
-    model_path: "models/vosk-model-pt"
-
-wake_word:
-  enabled: true
-  # Wake word: auto-set based on app.language
-  # pt: "computador" | es: "computadora" | en: "computer"
-  # Override here to use a custom wake word
-  word: "computador"
-  # Alternative triggers (accent variations)
-  aliases:
-    - "computado"
-    - "ei computador"
-    - "oi computador"
-  # Detection sensitivity (0.0 - 1.0)
-  sensitivity: 0.7
-  listen_timeout: 6          # seconds after wake word
-
 ai:
-  # "claude" | "openai" | "offline"
-  backend: "claude"
-  fallback: "openai"         # used if primary fails
+  backend: claude
   claude:
-    model: "claude-haiku-4-5-20251001"
     max_tokens: 512
+    model: claude-haiku-4-5-20251001
     temperature: 0.1
-  openai:
-    model: "gpt-4o-mini"
-    max_tokens: 512
-    temperature: 0.1
-  # Minimum confidence to execute without confirmation
-  min_confidence: 0.6
-  # Confirm risky actions by voice
   confirm_risky_actions: true
-
-voice_response:
-  enabled: true
-  # Speech rate (words per minute)
-  rate: 180
-  # Volume (0.0 - 1.0)
-  volume: 0.9
-  # Prefer female voice
-  prefer_female: true
-
+  fallback: openai
+  min_confidence: 0.6
+  openai:
+    max_tokens: 512
+    model: gpt-4o-mini
+    temperature: 0.1
+app:
+  language: pt-BR
+  name: VoxControl
+  version: 1.1.0
+audio:
+  channels: 1
+  chunk_duration_ms: 30
+  input_device: null
+  min_speech_energy: 0.01
+  sample_rate: 16000
+  silence_timeout: 1.5
 browser:
-  default: "chrome"          # chrome | edge | firefox
-  chrome_path: null          # null = auto-detect
+  chrome_path: null
+  default: chrome
   edge_path: null
   firefox_path: null
-
-office:
-  # true = use COM API (more reliable), false = use keyboard shortcuts
-  use_com_api: true
-  confirm_before_delete: true
-
-remote:
-  enabled: true
-  host: "0.0.0.0"
-  port: 8765
-  # Show QR code on startup
-  show_qr: true
-  # Authentication (JWT-based)
-  auth:
-    enabled: true
-    credentials_file: "config/credentials.json"
-    token_expiry: 86400     # 24 hours
-    # jwt_secret: ""        # auto-generated if empty
-  # Rate limiting
-  rate_limit:
-    max_requests: 60        # per IP
-    window_seconds: 60
-  # SSL (required for mobile mic)
-  ssl_certfile: ""
-  ssl_keyfile: ""
-
 logging:
-  level: "INFO"              # DEBUG | INFO | WARNING | ERROR
-  file: "logs/voxcontrol.log"
-  max_bytes: 5242880         # 5 MB
   backup_count: 3
+  file: logs/voxcontrol.log
+  level: INFO
+  max_bytes: 5242880
+office:
+  confirm_before_delete: true
+  use_com_api: true
+remote:
+  auth:
+    credentials_file: config/credentials.json
+    enabled: true
+    token_expiry: 86400
+  enabled: true
+  host: 0.0.0.0
+  port: 8765
+  rate_limit:
+    max_requests: 60
+    window_seconds: 60
+  show_qr: true
+  ssl_certfile: ''
+  ssl_keyfile: ''
+stt:
+  engine: faster-whisper
+  vosk:
+    model_path: models/vosk-model-pt
+  whisper:
+    beam_size: 5
+    compute_type: int8
+    device: cpu
+    language: pt
+    model_size: small
+    vad_filter: true
+voice_response:
+  enabled: true
+  prefer_female: true
+  rate: 180
+  volume: 0.9
+wake_word:
+  aliases:
+  - computado
+  - ei computador
+  - oi computador
+  enabled: true
+  listen_timeout: 6
+  sensitivity: 0.7
+  word: computador

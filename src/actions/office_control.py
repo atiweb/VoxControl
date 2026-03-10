@@ -170,6 +170,23 @@ class OfficeControl:
         pyautogui.hotkey("ctrl", "enter")
         return "Nova página inserida."
 
+    def _word_select_paragraph(self, params: dict) -> str:
+        # Triple-click selects the current paragraph in Word
+        pyautogui.click(clicks=3)
+        return "Parágrafo selecionado."
+
+    def _word_increase_font(self, params: dict) -> str:
+        steps = params.get("steps", 1)
+        for _ in range(steps):
+            pyautogui.hotkey("ctrl", "shift", ".")
+        return "Fonte aumentada."
+
+    def _word_decrease_font(self, params: dict) -> str:
+        steps = params.get("steps", 1)
+        for _ in range(steps):
+            pyautogui.hotkey("ctrl", "shift", ",")
+        return "Fonte diminuída."
+
     # ----------------------------------------------------------------- EXCEL
     def _excel_open(self, params: dict) -> str:
         file = params.get("file")

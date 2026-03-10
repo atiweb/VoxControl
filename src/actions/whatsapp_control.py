@@ -13,6 +13,19 @@ logger = logging.getLogger(__name__)
 WHATSAPP_URL = "https://web.whatsapp.com"
 
 
+def _type_unicode(text: str, interval: float = 0.0):
+    """Type text supporting Unicode (accented chars, emojis) via clipboard."""
+    try:
+        import pyperclip
+        old = pyperclip.paste()
+        pyperclip.copy(text)
+        pyautogui.hotkey("ctrl", "v")
+        time.sleep(0.1)
+        pyperclip.copy(old)  # restore clipboard
+    except ImportError:
+        pyautogui.write(text, interval=interval)
+
+
 class WhatsAppControl:
     """Controla o WhatsApp Web."""
 
@@ -40,7 +53,7 @@ class WhatsAppControl:
         # Usa Ctrl+F para pesquisar contato na barra de pesquisa
         self._focus_search()
         time.sleep(0.5)
-        pyautogui.write(contact, interval=0.05)
+        _type_unicode(contact)
         time.sleep(1.5)
         pyautogui.press("enter")
         return f"Abrindo conversa com {contact}."
@@ -58,7 +71,7 @@ class WhatsAppControl:
         # Foca na caixa de texto e digita
         self._focus_message_box()
         time.sleep(0.3)
-        pyautogui.write(message, interval=0.04)
+        _type_unicode(message)
         time.sleep(0.3)
         pyautogui.press("enter")
 
@@ -79,7 +92,7 @@ class WhatsAppControl:
         webbrowser.open(WHATSAPP_URL)
         time.sleep(2)
         self._focus_search()
-        pyautogui.write(query, interval=0.05)
+        _type_unicode(query)
         return f"Pesquisando '{query}' no WhatsApp."
 
     def _attach_file(self, params: dict) -> str:

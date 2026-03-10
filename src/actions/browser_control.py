@@ -100,6 +100,15 @@ class BrowserControl:
         pyautogui.hotkey("ctrl", "shift", "tab")
         return "Aba anterior."
 
+    def _goto_tab(self, params: dict) -> str:
+        number = params.get("number", 1)
+        if number == -1 or number > 8:
+            # Last tab
+            pyautogui.hotkey("ctrl", "9")
+            return "Última aba."
+        pyautogui.hotkey("ctrl", str(min(max(number, 1), 8)))
+        return f"Aba {number}."
+
     def _go_back(self, params: dict) -> str:
         pyautogui.hotkey("alt", "left")
         return "Voltando."

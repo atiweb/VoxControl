@@ -170,6 +170,9 @@ OFFLINE_RULES = {
         (["abrir navegador", "abre navegador"], "browser.open", {"browser": "chrome"}, "Abrindo o navegador."),
         (["nova aba", "nova guia"], "browser.new_tab", {}, "Nova aba aberta."),
         (["fechar aba", "fechar guia", "fecha aba", "fecha guia"], "browser.close_tab", {}, "Aba fechada."),
+        (["proxima aba", "aba seguinte"], "browser.next_tab", {}, "Pr\u00f3xima aba."),
+        (["aba anterior"], "browser.prev_tab", {}, "Aba anterior."),
+        (["ultima aba"], "browser.goto_tab", {"number": -1}, "\u00daltima aba."),
         (["voltar", "pagina anterior"], "browser.go_back", {}, "Voltando."),
         (["avancar", "proxima pagina"], "browser.go_forward", {}, "Avancando."),
         (["recarregar", "atualizar pagina", "f5"], "browser.refresh", {}, "Pagina recarregada."),
@@ -188,6 +191,10 @@ OFFLINE_RULES = {
         (["colar", "cola"], "keyboard.paste", {}, "Colado."),
         (["recortar", "cortar"], "keyboard.cut", {}, "Recortado."),
         (["selecionar tudo"], "keyboard.select_all", {}, "Tudo selecionado."),
+        # Word
+        (["selecionar paragrafo", "seleciona paragrafo"], "office.word.select_paragraph", {}, "Par\u00e1grafo selecionado."),
+        (["aumentar fonte", "aumenta fonte", "fonte maior"], "office.word.increase_font", {"steps": 2}, "Fonte aumentada."),
+        (["diminuir fonte", "diminui fonte", "fonte menor"], "office.word.decrease_font", {"steps": 2}, "Fonte diminu\u00edda."),
         # Midia
         (["pausar", "parar musica", "play pause"], "media.play_pause", {}, "Play/Pause."),
         (["proxima musica", "proxima faixa"], "media.next", {}, "Proxima musica."),
@@ -211,6 +218,9 @@ OFFLINE_RULES = {
         (["abrir edge"], "browser.open", {"browser": "edge"}, "Abriendo Edge."),
         (["nueva pestana"], "browser.new_tab", {}, "Nueva pestana abierta."),
         (["cerrar pestana"], "browser.close_tab", {}, "Pestana cerrada."),
+        (["siguiente pestana", "pestana siguiente"], "browser.next_tab", {}, "Siguiente pesta\u00f1a."),
+        (["pestana anterior"], "browser.prev_tab", {}, "Pesta\u00f1a anterior."),
+        (["ultima pestana"], "browser.goto_tab", {"number": -1}, "\u00daltima pesta\u00f1a."),
         (["volver", "pagina anterior", "atras"], "browser.go_back", {}, "Volviendo."),
         (["avanzar", "siguiente pagina"], "browser.go_forward", {}, "Avanzando."),
         (["recargar", "actualizar pagina"], "browser.refresh", {}, "Pagina recargada."),
@@ -229,6 +239,10 @@ OFFLINE_RULES = {
         (["pegar"], "keyboard.paste", {}, "Pegado."),
         (["cortar"], "keyboard.cut", {}, "Cortado."),
         (["seleccionar todo"], "keyboard.select_all", {}, "Todo seleccionado."),
+        # Word
+        (["seleccionar parrafo", "selecciona parrafo"], "office.word.select_paragraph", {}, "P\u00e1rrafo seleccionado."),
+        (["aumentar fuente", "fuente mas grande"], "office.word.increase_font", {"steps": 2}, "Fuente aumentada."),
+        (["disminuir fuente", "fuente mas chica", "fuente mas pequena"], "office.word.decrease_font", {"steps": 2}, "Fuente disminuida."),
         # Media
         (["pausar", "parar musica", "play pause"], "media.play_pause", {}, "Play/Pausa."),
         (["siguiente cancion", "siguiente pista"], "media.next", {}, "Siguiente cancion."),
@@ -252,6 +266,9 @@ OFFLINE_RULES = {
         (["open edge", "open microsoft edge"], "browser.open", {"browser": "edge"}, "Opening Edge."),
         (["new tab"], "browser.new_tab", {}, "New tab opened."),
         (["close tab"], "browser.close_tab", {}, "Tab closed."),
+        (["next tab"], "browser.next_tab", {}, "Next tab."),
+        (["previous tab", "prev tab"], "browser.prev_tab", {}, "Previous tab."),
+        (["last tab"], "browser.goto_tab", {"number": -1}, "Last tab."),
         (["go back", "back", "previous page"], "browser.go_back", {}, "Going back."),
         (["go forward", "forward", "next page"], "browser.go_forward", {}, "Going forward."),
         (["reload", "refresh", "refresh page"], "browser.refresh", {}, "Page refreshed."),
@@ -270,6 +287,10 @@ OFFLINE_RULES = {
         (["paste"], "keyboard.paste", {}, "Pasted."),
         (["cut"], "keyboard.cut", {}, "Cut."),
         (["select all"], "keyboard.select_all", {}, "All selected."),
+        # Word
+        (["select paragraph"], "office.word.select_paragraph", {}, "Paragraph selected."),
+        (["increase font", "bigger font", "font bigger"], "office.word.increase_font", {"steps": 2}, "Font increased."),
+        (["decrease font", "smaller font", "font smaller"], "office.word.decrease_font", {"steps": 2}, "Font decreased."),
         # Media
         (["pause", "stop music", "play pause"], "media.play_pause", {}, "Play/Pause."),
         (["next song", "next track"], "media.next", {}, "Next song."),
