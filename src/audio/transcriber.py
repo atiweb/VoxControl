@@ -118,6 +118,34 @@ class Transcriber:
             logger.error(f"Erro na transcrição Whisper: {e}")
             return None
 
+    def transcribe_wake_word(self, audio_data: np.ndarray, sample_rate: int = 16000) -> Optional[str]:
+        """
+        Fast transcription optimised for wake-word detection.
+        Uses beam_size=1 and disables VAD so short utterances are not
+        filtered out.  Falls back to normal transcribe for non-Whisper engines.
+        """
+        if self.engine != "faster-whisper" or self._model is None:
+            return self.transcribe(audio_data, sample_rate)
+        try:
+            cfg = self.config.get("whisper", {})
+            if audio_data.dtype != np.float32:
+                audio_data = audio_data.astype(np.float32) / 32768.0
+
+            segments, _ = self._model.transcribe(
+                audio_data,
+                language=cfg.get("language", "pt"),
+                beam_size=1,
+                vad_filter=False,
+            )
+            text = " ".join(s.text for s in segments).strip()
+            if not text:
+                return None
+            logger.debug(f"Wake-word check: '{text}'")
+            return text
+        except Exception as e:
+            logger.debug(f"Erro na transcrição rápida (wake word): {e}")
+            return None
+
     def _transcribe_vosk(self, audio_data: np.ndarray) -> Optional[str]:
         try:
             import json

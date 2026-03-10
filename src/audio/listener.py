@@ -86,59 +86,82 @@ class AudioListener:
         buffer = []
         last_speech_time = time.time()
         collecting_wake = True
+        last_wake_check = 0.0
+        WAKE_CHECK_INTERVAL = 1.5  # seconds between transcription attempts
 
         while self._running:
             try:
-                chunk = self._audio_queue.get(timeout=0.1)
-            except queue.Empty:
-                continue
-
-            buffer.append(chunk)
-
-            # Janela deslizante de 2 segundos para detectar wake word
-            max_chunks = int(2.0 * self.sample_rate / self.chunk_size)
-            if len(buffer) > max_chunks:
-                buffer = buffer[-max_chunks:]
-
-            if collecting_wake:
-                # Verifica energia para não processar silêncio
-                energy = np.abs(chunk).mean()
-                if energy < self.min_energy:
+                # ── Drain the queue so we stay in sync with real-time ──
+                new_chunks = []
+                try:
+                    new_chunks.append(self._audio_queue.get(timeout=0.1))
+                    # Grab every other chunk already waiting
+                    while not self._audio_queue.empty():
+                        new_chunks.append(self._audio_queue.get_nowait())
+                except queue.Empty:
                     continue
 
-                # Transcreve a janela para detectar wake word
-                window = np.concatenate(buffer)
-                detected = self._check_wake_word(window)
-                if detected:
-                    logger.info(f"Wake word '{self.wake_word}' detectada!")
-                    buffer.clear()
-                    collecting_wake = False
-                    last_speech_time = time.time()
-            else:
-                # Modo de captura do comando
-                energy = np.abs(chunk).mean()
-                if energy > self.min_energy:
-                    last_speech_time = time.time()
+                buffer.extend(new_chunks)
 
-                elapsed_silence = time.time() - last_speech_time
-                elapsed_total = time.time() - (last_speech_time - len(buffer) * self.chunk_ms / 1000)
+                # Janela deslizante de 2 segundos para detectar wake word
+                max_chunks = int(2.0 * self.sample_rate / self.chunk_size)
+                if len(buffer) > max_chunks:
+                    buffer = buffer[-max_chunks:]
 
-                # Finaliza captura por silêncio ou timeout
-                if elapsed_silence >= self.silence_timeout or elapsed_total >= self.listen_timeout:
-                    if buffer:
-                        command_audio = np.concatenate(buffer)
-                        if np.abs(command_audio).mean() > self.min_energy * 0.5:
-                            self.on_command(command_audio)
-                    buffer.clear()
-                    collecting_wake = True
-                    logger.info(f"Aguardando '{self.wake_word}'...")
+                if collecting_wake:
+                    # Verifica energia do áudio mais recente
+                    recent = np.concatenate(new_chunks)
+                    energy = np.abs(recent).mean()
+                    if energy < self.min_energy:
+                        continue
+
+                    # Throttle: limitar transcriptions a cada WAKE_CHECK_INTERVAL
+                    now = time.time()
+                    if now - last_wake_check < WAKE_CHECK_INTERVAL:
+                        continue
+                    last_wake_check = now
+
+                    # Transcreve a janela para detectar wake word
+                    window = np.concatenate(buffer)
+                    detected = self._check_wake_word(window)
+                    if detected:
+                        logger.info(f"Wake word '{self.wake_word}' detectada!")
+                        buffer.clear()
+                        collecting_wake = False
+                        last_speech_time = time.time()
+                else:
+                    # Modo de captura do comando
+                    recent = np.concatenate(new_chunks)
+                    energy = np.abs(recent).mean()
+                    if energy > self.min_energy:
+                        last_speech_time = time.time()
+
+                    elapsed_silence = time.time() - last_speech_time
+                    elapsed_total = time.time() - (last_speech_time - len(buffer) * self.chunk_ms / 1000)
+
+                    # Finaliza captura por silêncio ou timeout
+                    if elapsed_silence >= self.silence_timeout or elapsed_total >= self.listen_timeout:
+                        if buffer:
+                            command_audio = np.concatenate(buffer)
+                            if np.abs(command_audio).mean() > self.min_energy * 0.5:
+                                self.on_command(command_audio)
+                        buffer.clear()
+                        collecting_wake = True
+                        last_wake_check = 0.0
+                        logger.info(f"Aguardando '{self.wake_word}'...")
+            except Exception as e:
+                logger.error(f"Erro no loop de escuta: {e}")
+                time.sleep(0.2)
 
     def _check_wake_word(self, audio: np.ndarray) -> bool:
         """Verifica se a wake word está presente no áudio."""
         if self._wake_transcriber is None:
             return False
         try:
-            text = self._wake_transcriber.transcribe(audio, self.sample_rate)
+            if hasattr(self._wake_transcriber, 'transcribe_wake_word'):
+                text = self._wake_transcriber.transcribe_wake_word(audio, self.sample_rate)
+            else:
+                text = self._wake_transcriber.transcribe(audio, self.sample_rate)
             if not text:
                 return False
             text_lower = text.lower()
