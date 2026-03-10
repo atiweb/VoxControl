@@ -150,19 +150,76 @@ class IntentParser:
             logger.error(f"JSON decode error: {e}\nResponse: {raw}")
             return None
 
+    # Filler words stripped during offline matching (articles, prepositions, etc.)
+    _FILLER_WORDS = {
+        "pt": {"o", "a", "os", "as", "um", "uma", "uns", "umas", "do", "da",
+               "dos", "das", "no", "na", "nos", "nas", "de", "em", "para",
+               "por", "com", "ao", "aos", "meu", "minha"},
+        "es": {"el", "la", "los", "las", "un", "una", "unos", "unas", "del",
+               "al", "de", "en", "para", "por", "con", "mi"},
+        "en": {"the", "a", "an", "my", "please"},
+    }
+
+    # Common verb conjugation mappings (imperative → infinitive)
+    _VERB_NORMALIZATIONS = {
+        "pt": {
+            "abre": "abrir", "fecha": "fechar", "abre": "abrir",
+            "minimiza": "minimizar", "maximiza": "maximizar",
+            "mostra": "mostrar", "bloqueia": "bloquear",
+            "tira": "tirar", "aumenta": "aumentar", "diminui": "diminuir",
+            "baixa": "baixar", "silencia": "silenciar",
+            "recarrega": "recarregar", "atualiza": "atualizar",
+            "rola": "rolar", "desce": "descer", "sobe": "subir",
+            "salva": "salvar", "copia": "copiar", "cola": "colar",
+            "recorta": "recortar", "seleciona": "selecionar",
+            "pausa": "pausar", "para": "parar", "digita": "digitar",
+            "pesquisa": "pesquisar", "busca": "buscar",
+        },
+        "es": {
+            "abre": "abrir", "cierra": "cerrar",
+            "minimiza": "minimizar", "maximiza": "maximizar",
+            "muestra": "mostrar", "bloquea": "bloquear",
+            "sube": "subir", "baja": "bajar",
+            "recarga": "recargar", "actualiza": "actualizar",
+            "guarda": "guardar", "copia": "copiar", "pega": "pegar",
+            "corta": "cortar", "selecciona": "seleccionar",
+            "pausa": "pausar", "busca": "buscar",
+        },
+        "en": {},
+    }
+
+    def _normalize_text(self, text: str) -> str:
+        """Strip filler words and normalize verb forms for offline matching."""
+        lang = self._lang
+        words = text.lower().split()
+
+        # Normalize verbs (first word is usually the verb)
+        verb_map = self._VERB_NORMALIZATIONS.get(lang, {})
+        if words and words[0] in verb_map:
+            words[0] = verb_map[words[0]]
+
+        # Strip filler words
+        fillers = self._FILLER_WORDS.get(lang, set())
+        words = [w for w in words if w not in fillers]
+
+        return " ".join(words)
+
     def _offline_parse(self, text: str) -> dict:
         """
         Simple keyword matching when AI is not available.
         Uses language-specific rules from i18n module.
         """
         text_lower = text.lower().strip()
+        text_normalized = self._normalize_text(text_lower)
         lang = self._lang
 
         # Get language-specific rules (fallback to English)
         rules = OFFLINE_RULES.get(lang, OFFLINE_RULES.get("en", []))
 
         for triggers, action, params, response in rules:
-            if any(t in text_lower for t in triggers):
+            if any(t in text_lower or t in text_normalized
+                   or self._normalize_text(t) in text_normalized
+                   for t in triggers):
                 return {
                     "action": action,
                     "params": params,

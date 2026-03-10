@@ -153,8 +153,8 @@ OFFLINE_RULES = {
     "pt": [
         # Sistema
         (["abrir calculadora", "abre calculadora"], "system.open_app", {"app": "calc"}, "Abrindo a calculadora."),
-        (["abrir bloco de notas", "abre bloco de notas", "abrir notepad"], "system.open_app", {"app": "notepad"}, "Abrindo o bloco de notas."),
-        (["abrir explorador", "abrir pasta", "abrir arquivos"], "system.open_app", {"app": "explorer"}, "Abrindo o explorador de arquivos."),
+        (["abrir bloco de notas", "abre bloco de notas", "abrir notepad", "abre notepad"], "system.open_app", {"app": "notepad"}, "Abrindo o bloco de notas."),
+        (["abrir explorador", "abre explorador", "abrir pasta", "abre pasta", "abrir arquivos", "abre arquivos"], "system.open_app", {"app": "explorer"}, "Abrindo o explorador de arquivos."),
         (["minimizar", "minimiza"], "system.minimize", {}, "Janela minimizada."),
         (["maximizar", "maximiza"], "system.maximize", {}, "Janela maximizada."),
         (["area de trabalho", "mostrar area de trabalho"], "system.show_desktop", {}, "Mostrando a area de trabalho."),
@@ -164,10 +164,12 @@ OFFLINE_RULES = {
         (["diminuir volume", "baixar volume"], "system.volume_down", {"amount": 3}, "Volume diminuido."),
         (["silenciar", "mudo", "mutar"], "system.volume_mute", {}, "Volume silenciado."),
         # Navegador
-        (["abrir chrome", "abrir google chrome"], "browser.open", {"browser": "chrome"}, "Abrindo o Chrome."),
-        (["abrir edge"], "browser.open", {"browser": "edge"}, "Abrindo o Edge."),
+        (["abrir chrome", "abrir google chrome", "abre chrome", "abre google chrome"], "browser.open", {"browser": "chrome"}, "Abrindo o Chrome."),
+        (["abrir firefox", "abre firefox"], "browser.open", {"browser": "firefox"}, "Abrindo o Firefox."),
+        (["abrir edge", "abre edge"], "browser.open", {"browser": "edge"}, "Abrindo o Edge."),
+        (["abrir navegador", "abre navegador"], "browser.open", {"browser": "chrome"}, "Abrindo o navegador."),
         (["nova aba", "nova guia"], "browser.new_tab", {}, "Nova aba aberta."),
-        (["fechar aba", "fechar guia"], "browser.close_tab", {}, "Aba fechada."),
+        (["fechar aba", "fechar guia", "fecha aba", "fecha guia"], "browser.close_tab", {}, "Aba fechada."),
         (["voltar", "pagina anterior"], "browser.go_back", {}, "Voltando."),
         (["avancar", "proxima pagina"], "browser.go_forward", {}, "Avancando."),
         (["recarregar", "atualizar pagina", "f5"], "browser.refresh", {}, "Pagina recarregada."),
