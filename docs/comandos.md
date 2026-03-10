@@ -1,6 +1,6 @@
 # Command Reference
 
-Complete catalog of all 80+ actions supported by VoxControl.
+Complete catalog of all 85+ actions supported by VoxControl.
 Each action can be activated by voice in Portuguese, Spanish, or English (via AI) or via offline keyword matching.
 
 Commands can be issued via:
@@ -145,6 +145,7 @@ Chrome, Edge and Firefox control.
 | `browser.reopen_tab` | -- | Reopen closed tab (Ctrl+Shift+T) |
 | `browser.next_tab` | -- | Next tab (Ctrl+Tab) |
 | `browser.prev_tab` | -- | Previous tab (Ctrl+Shift+Tab) |
+| `browser.goto_tab` | number: 1-8, or 9 for last | Go to specific tab (Ctrl+number) |
 | `browser.go_back` | -- | Go back (Alt+Left) |
 | `browser.go_forward` | -- | Go forward (Alt+Right) |
 | `browser.refresh` | -- | Reload (F5) |
@@ -172,6 +173,8 @@ Chrome, Edge and Firefox control.
 "nova aba"
 "fechar aba"
 "voltar"
+"ir para aba 3"
+"proxima aba"
 "tela cheia"
 ```
 
@@ -182,6 +185,8 @@ Chrome, Edge and Firefox control.
 "nueva pestana"
 "cerrar pestana"
 "volver"
+"ir a pestana 3"
+"siguiente pestana"
 "pantalla completa"
 ```
 
@@ -192,6 +197,8 @@ Chrome, Edge and Firefox control.
 "new tab"
 "close tab"
 "go back"
+"go to tab 3"
+"next tab"
 "fullscreen"
 ```
 
@@ -264,13 +271,16 @@ WhatsApp Web control (requires WhatsApp Web open in browser).
 | `office.word.spell_check` | -- | Spell check (F7) |
 | `office.word.word_count` | -- | Word count |
 | `office.word.new_page` | -- | Insert page break (Ctrl+Enter) |
+| `office.word.select_paragraph` | -- | Select current paragraph (triple-click) |
+| `office.word.increase_font` | -- | Increase font size (Ctrl+Shift+>) |
+| `office.word.decrease_font` | -- | Decrease font size (Ctrl+Shift+<) |
 
 ### Examples
 
 ```
-PT: "abrir Word" / "negrito" / "centralizar texto" / "inserir tabela 3 por 4"
-ES: "abrir Word" / "negrita" / "centrar texto" / "insertar tabla 3 por 4"
-EN: "open Word" / "bold" / "center text" / "insert 3 by 4 table"
+PT: "abrir Word" / "negrito" / "centralizar texto" / "inserir tabela 3 por 4" / "selecionar paragrafo" / "aumentar fonte"
+ES: "abrir Word" / "negrita" / "centrar texto" / "insertar tabla 3 por 4" / "seleccionar parrafo" / "aumentar fuente"
+EN: "open Word" / "bold" / "center text" / "insert 3 by 4 table" / "select paragraph" / "increase font"
 ```
 
 ---
@@ -481,6 +491,7 @@ When no AI API is available, the system uses keyword matching. The following com
 **Browser:**
 - "abrir chrome", "abrir google chrome", "abrir edge"
 - "nova aba", "nova guia", "fechar aba", "fechar guia"
+- "proxima aba", "aba seguinte", "aba anterior"
 - "voltar", "pagina anterior", "avancar", "proxima pagina"
 - "recarregar", "atualizar pagina", "f5"
 - "rolar para baixo", "descer", "rolar para cima", "subir"
@@ -510,6 +521,7 @@ When no AI API is available, the system uses keyword matching. The following com
 **Browser:**
 - "abrir chrome", "abrir google chrome", "abrir edge"
 - "nueva pestana", "cerrar pestana"
+- "siguiente pestana", "pestana siguiente", "pestana anterior"
 - "volver", "pagina anterior", "atras"
 - "avanzar", "siguiente pagina"
 - "recargar", "actualizar pagina"
@@ -540,6 +552,7 @@ When no AI API is available, the system uses keyword matching. The following com
 **Browser:**
 - "open chrome", "open google chrome", "open edge"
 - "new tab", "close tab"
+- "next tab", "previous tab"
 - "go back", "back", "previous page"
 - "go forward", "forward", "next page"
 - "reload", "refresh", "refresh page"

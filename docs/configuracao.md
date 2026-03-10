@@ -19,7 +19,12 @@ When running the installed .exe for the first time, default config files are aut
 
 ### GUI Settings Panel
 
-If using the desktop GUI, most settings can be changed visually via the **Settings** tab (language, Whisper model, AI backend, voice, wake word, remote server). Changes are saved to `settings.yaml` automatically.
+If using the desktop GUI, most settings can be changed visually via the **Settings** tab:
+- Language, Whisper model, AI backend, voice, wake word, remote server
+- API key fields (Anthropic, OpenAI) with environment variable integration
+- Whisper model download button (downloads the configured model size on demand)
+
+Changes are saved to `settings.yaml` automatically.
 
 ---
 

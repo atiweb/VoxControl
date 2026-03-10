@@ -99,7 +99,7 @@ The internationalization module centralizes all language-specific data:
 | `CONFIRM_WORDS` / `CANCEL_WORDS` | Confirmation/cancel words per language |
 | `FOLDER_ALIASES_I18N` | Folder aliases per language (documents, downloads, etc.) |
 | `SEARCH_PREFIXES` / `TYPE_PREFIXES` | Offline parser prefixes per language |
-| `OFFLINE_RULES` | ~35 keyword-matching rules per language |
+| `OFFLINE_RULES` | ~40 keyword-matching rules per language |
 | `STRINGS` | All UI strings (engine, remote, dispatcher) |
 
 Key functions:
@@ -122,10 +122,15 @@ AudioListener._audio_callback()     # Collects audio chunks
     v
 AudioListener._listen_loop()        # Main loop in thread
     |
+    |-- Drains the entire audio queue each iteration
+    |   (stays in sync with real-time audio)
+    |
     |-- Wake word mode:
-    |   |-- Accumulates 2-second buffer
+    |   |-- Accumulates 2-second sliding buffer
     |   |-- Checks audio energy (min_speech_energy)
-    |   |-- Transcribes window with Whisper to detect wake word
+    |   |-- Throttles: waits 1.5s between transcription attempts
+    |   |-- Transcribes window with fast wake word method
+    |   |   (beam_size=1, no VAD filter, ~5x faster)
     |   |-- If detected: switches to capture mode
     |
     |-- Capture mode:
@@ -142,12 +147,14 @@ engine.process_audio(audio_data)    # Processing by engine
 numpy array (float32, 16kHz)
     |
     v
-Transcriber.transcribe()
+Transcriber.transcribe()            # Full transcription (commands)
+    |                               # beam_size=5, VAD filter enabled
+    |
+Transcriber.transcribe_wake_word()  # Fast transcription (wake word only)
+    |                               # beam_size=1, no VAD filter (~5x faster)
     |
     |-- faster-whisper:
     |   |-- WhisperModel.transcribe()
-    |   |-- Built-in VAD filter
-    |   |-- beam_size for quality
     |   |-- Returns text in configured language
     |
     |-- vosk:
@@ -460,6 +467,16 @@ Format:
 - [x] Centralized path resolver (source vs .exe)
 - [x] Full test suite (180 tests, pytest)
 - [x] Flutter mobile app (iOS/Android)
+- [x] Settings UI: API key fields + Whisper model download
+- [x] CUDA auto-fallback to CPU when GPU libraries unavailable
+- [x] Duplicate middleware prevention on engine restart
+- [x] Network drive build fix (.exe to local path)
+- [x] Offline keyword normalization (accent-insensitive matching)
+- [x] Focus-first window management with AI target detection
+- [x] Tab navigation: goto specific tab, next/prev tab
+- [x] WhatsApp Unicode support (clipboard-based typing)
+- [x] Word: select paragraph, increase/decrease font size
+- [x] Real-time wake word detection (queue draining + fast transcription)
 - [ ] Telegram Bot integration (alternative to WebSocket)
 - [ ] Persistent command history
 

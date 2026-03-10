@@ -2,7 +2,7 @@
 
 **Open source voice control for Windows. Supports Portuguese, Spanish, and English.**
 
-Offline-first | AI-powered (Claude / OpenAI) | Mobile remote control | 80+ actions | 3 languages
+Offline-first | AI-powered (Claude / OpenAI) | Mobile remote control | 85+ actions | 3 languages
 
 ---
 
@@ -40,9 +40,9 @@ python -m src.main --lang pt       # Portuguese (default)
 | Category | Actions | Command examples |
 |----------|---------|------------------|
 | **System** | Open/close apps, volume, brightness, screenshots, lock, shutdown | "open calculator", "take screenshot", "volume up" |
-| **Browser** | Chrome, Edge, Firefox: tabs, search, scroll, zoom, bookmarks | "search Google for today's news", "new tab", "close tab" |
+| **Browser** | Chrome, Edge, Firefox: tabs, search, scroll, zoom, bookmarks, tab navigation | "search Google for today's news", "new tab", "go to tab 3" |
 | **WhatsApp** | Open chats, send messages, search, attachments, audio | "send message to John: hello!", "open chat with Maria" |
-| **Word** | Formatting, tables, spell check, print, find/replace | "bold", "insert table 3 by 4", "spell check" |
+| **Word** | Formatting, tables, spell check, print, find/replace, font size | "bold", "insert table 3 by 4", "select paragraph", "increase font" |
 | **Excel** | Cells, formulas, charts, filters, pivot tables | "auto sum", "go to cell B5", "create bar chart" |
 | **PowerPoint** | Slides, slideshow, images, themes | "new slide", "start slideshow", "previous slide" |
 | **Files** | Explorer, folders, rename, search, compress | "open downloads", "create folder projects", "search report" |
@@ -215,7 +215,7 @@ The system has 3 levels of command interpretation:
 
 **With AI** (Claude/OpenAI): understands full natural language in pt/es/en. Example: "send a message to John on WhatsApp saying I'll be late" works directly.
 
-**Without AI** (offline): recognizes direct commands like "open chrome", "copy", "new tab". Works without internet after the Whisper model is downloaded.
+**Without AI** (offline): recognizes direct commands like "open chrome", "copy", "new tab", "next tab". Works without internet after the Whisper model is downloaded.
 
 Fallback is automatic: if Claude fails, tries OpenAI; if both fail, uses offline.
 
@@ -314,7 +314,7 @@ VoxControl/
 |   |   |-- transcriber.py     # STT (Whisper / Vosk)
 |   |-- ai/
 |   |   |-- intent_parser.py   # Claude / OpenAI / offline
-|   |   |-- prompts.py         # multi-language system prompt, 80+ actions
+|   |   |-- prompts.py         # multi-language system prompt, 85+ actions
 |   |-- actions/
 |   |   |-- dispatcher.py      # action router
 |   |   |-- system_control.py  # Windows (apps, volume, screen)
@@ -374,8 +374,8 @@ VoxControl/
 |--------|-------|
 | Python files | 30 |
 | Lines of code | ~5,200 |
-| Supported actions | 80+ |
-| Offline rules | ~35 per language |
+| Supported actions | 85+ |
+| Offline rules | ~40 per language |
 | Languages | 3 (pt, es, en) |
 | Unit tests | 180 |
 | Flutter screens | 4 |
@@ -389,7 +389,7 @@ VoxControl/
 |----------|---------|
 | [docs/instalacao.md](docs/instalacao.md) | Installation guide, requirements, troubleshooting |
 | [docs/configuracao.md](docs/configuracao.md) | All settings.yaml and .env options |
-| [docs/comandos.md](docs/comandos.md) | Reference for all 80+ actions with parameters |
+| [docs/comandos.md](docs/comandos.md) | Reference for all 85+ actions with parameters |
 | [docs/controle-remoto.md](docs/controle-remoto.md) | Mobile setup, HTTPS, WebSocket API |
 | [docs/arquitetura.md](docs/arquitetura.md) | System architecture, how to contribute, roadmap |
 

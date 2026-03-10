@@ -298,7 +298,7 @@ If you don't want to use paid APIs:
 AI_BACKEND=offline
 ```
 
-Offline mode recognizes ~35 direct commands per language. Works well for common actions like "open chrome", "copy", "save", but doesn't understand complex natural language.
+Offline mode recognizes ~40 direct commands per language. Works well for common actions like "open chrome", "copy", "save", "next tab", but doesn't understand complex natural language.
 
 ---
 
@@ -317,6 +317,8 @@ stt:
 ```
 
 Without a GPU, Whisper works fine on CPU (slightly slower but perfectly functional).
+
+> **Auto-fallback**: If CUDA libraries are not available at runtime, VoxControl automatically falls back to CPU with `int8` compute type. You can safely set `device: "auto"` and let the system choose.
 
 ---
 
